@@ -278,3 +278,48 @@ After 8 iterations and 14 total bugs found/fixed, the codebase has no known logi
 | 🟡 Med | Tailwind CSS build step (currently CDN) | Month 3 |
 | 🟢 Low | Season-long points line chart on player profile | Month 3 |
 | 🟢 Low | Player profile: pick-by-pick history within each week | Month 3 |
+
+---
+
+## Iteration 10 — 2026-05-17
+
+### Completed this iteration
+- ✅ **Live standings during games — fully implemented** (Month 3 feature complete):
+  - `_compute_live_standings(season, week)` in `api/routes/public.py` — computes implied balances in real time:
+    - No active games → returns `db.get_standings()` (static view), `is_live=False`
+    - Active games → fetches `picks_reveal_v`, per-player:
+      - Settled picks (result is not None): uses `net_profit` directly
+      - In-progress/final unsettled: computes ATS implied result from current scores (fav_score - dog_score vs spread)
+    - Returns standings sorted by `current_points` desc + `is_live` bool
+  - `leaderboard.html` — conditional LIVE UI: red border on table, red background on header, pulsing `● LIVE` badge in Player column
+  - `fragments/standings_rows.html` — LIVE banner row at top; asterisk on points column; footer footnote "* implied from current scores · final standings settle Tuesday"
+  - Both `/` and `/leaderboard-fragment` (htmx polling target) updated to use `_compute_live_standings()`
+
+### Decisions made
+- Live standings compute ATS implied result on the fly (no caching) — acceptable given 60s htmx polling cadence; avoids a separate "live standings" DB table or view
+- `is_live=True` only when at least one game is `in_progress`; when all games are `final` but settlements haven't run yet, scores are still shown as implied (with asterisk) but the LIVE badge is off
+- Eliminated players with current ≤ 0 are marked `is_eliminated=True` and sorted last (implicit via negative sort key)
+
+### Code state: all known bugs resolved, Month 3 live standings complete
+
+Bugs fixed across all iterations (14 total):
+1. Stale picks accumulation  2. Wrong `_current_week()` x3 routes  3. Dead nfl-data-py import  4. No eliminated-player check  5. Dead variable  6. MNF window missing  7. settle_week.py nfl-data-py fallback  8. detect_current_week duplication  9. Historical PII in git  10. ESPN ID mismatch (critical)  11. Picks form slot pre-pop broken  12. `.single()` crash x4 locations  13. Missing CRON_SECRET/ADMIN_EMAIL in .env.example  14. Migration 004 missing
+
+### Remaining gaps before the app runs end-to-end
+
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 High | Supabase project + run migrations 001, 002, 004 (skip 003 in prod) | Manual (Ryan does this) |
+| 🔴 High | Vercel project + env vars (see `.env.example`) | Manual |
+| 🔴 High | API keys: The Odds API, Resend | Manual |
+| 🔴 High | GitHub Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY, ODDS_API_KEY, FROM_EMAIL, FROM_NAME, APP_URL, ADMIN_EMAIL, CRON_SECRET + Var: CURRENT_SEASON=2026 | Manual |
+| 🟡 Med | Add 2026 players via admin dashboard | Manual (Ryan does this before Week 1) |
+| 🟡 Med | Dry-run `pull_spreads.py` before Week 1 | Manual (Ryan does this) |
+| 🟡 Med | Tailwind CSS build step (currently CDN — fine for dev/launch) | Month 3 |
+| 🟢 Low | Season-long points line chart on player profile | Month 3 |
+| 🟢 Low | Player profile: pick-by-pick history within each week | Month 3 |
+
+### Next coding priorities (if loop continues)
+- Season-long points line chart on player profile (uses `week_log` data, add Chart.js to base.html)
+- Player profile: pick-by-pick history within each week (uses `picks_reveal_v` view)
+- Tailwind CSS build step (replace CDN with bundled output via `tailwindcss` CLI)
