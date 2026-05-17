@@ -2,7 +2,8 @@ name: Sat — Lock Picks & Reveal Email
 
 on:
   schedule:
-    # Saturday 11:59am ET = Saturday 17:59 UTC (DST) / 16:59 UTC
+    # 17:59 UTC Sat = 1:59pm EDT (regular season) / 12:59pm EST (playoffs)
+    # Always after the noon ET deadline so penalty check and reveal email are correct.
     - cron: '59 17 * * 6'
   workflow_dispatch:
     inputs:
