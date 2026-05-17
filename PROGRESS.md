@@ -627,6 +627,24 @@ No known bugs remain. The codebase is production-ready pending infrastructure se
 
 ---
 
+## Loop Iteration — 2026-05-17 (continued)
+
+### 2 more bugs found and fixed (61 commits total)
+
+**Bug 38 — `week_view.html`: Net column crashes on unsettled picks**
+- `pp.picks | sum(attribute='net_profit')` — Jinja2 sums the `net_profit` of each pick. Between Saturday noon (picks revealed) and Tuesday (settlement runs), `net_profit` is `None`. Jinja2 evaluates `0 + None` → `TypeError`, crashing the week view for anyone who visits between Saturday noon and Tuesday.
+- The route already pre-computes `pp.total_net_profit` with `sum(p["net_profit"] or 0 for p in pp["picks"])` — None-safe.
+- Fix: replaced `pp.picks | sum(attribute='net_profit')` in the Net column with `pp.total_net_profit` (used twice, for the CSS class and the display value).
+
+**Bug 39 — Admin dashboard: no penalties UI (waive route orphaned)**
+- The `/admin/penalty/{id}/waive` route existed in `admin.py` but `admin_home` never queried penalties and the dashboard template had no penalties section.
+- Ryan would have to go to Supabase directly to see or waive a penalty — not acceptable for weekly ops.
+- Fix: `admin_home` now queries `penalties` with embedded `players(name)` join; dashboard template has a full-season penalty table with active/waived status badges and inline waive forms with reason field.
+
+### Running total: 39 bugs fixed (61 commits)
+
+---
+
 ## LOOP COMPLETE — Infrastructure Checklist (Ryan's manual work)
 
 All code tasks from the plan are done. Only manual setup remains before Week 1 kickoff (Sept 2026).
