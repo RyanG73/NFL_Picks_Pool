@@ -12,6 +12,11 @@ NFL_Picks_Pool_Plan.html
 Historical_Results/
 Historical_Code/
 Rules/*.pdf
+Rules/*.docx
+
+# Generated HTML exports (pandoc artifacts)
+*.html
+*_files/
 
 # Claude Code session data
 .claude/
