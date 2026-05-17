@@ -184,10 +184,18 @@ async def player_profile(request: Request, player_id: str):
         return HTMLResponse("Player not found", status_code=404)
     week_log = db.get_week_log(player_id, SEASON)
     penalties = db.get_penalties(player_id, SEASON)
+    all_picks = db.get_player_picks_history(player_id, SEASON)
+
+    # Group picks by week for the pick-by-pick history section
+    picks_by_week: dict[int, list[dict]] = {}
+    for pick in all_picks:
+        picks_by_week.setdefault(pick["week"], []).append(pick)
+
     return templates.TemplateResponse("player_profile.html", {
         "request": request,
         "player": player,
         "week_log": week_log,
         "penalties": penalties,
+        "picks_by_week": picks_by_week,
         "season": SEASON,
     })

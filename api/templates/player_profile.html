@@ -35,6 +35,15 @@
   </div>
 </div>
 
+<!-- Season-long points chart -->
+{% set chart_weeks = week_log | selectattr('end_points', 'ne', none) | list %}
+{% if chart_weeks | length > 1 %}
+<div class="bg-white rounded-xl shadow border border-gray-100 p-4 mb-6">
+  <h2 class="font-semibold text-gray-800 mb-3">Season Trend</h2>
+  <canvas id="pointsChart" height="120"></canvas>
+</div>
+{% endif %}
+
 <!-- Week-by-week history -->
 <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-6">
   <div class="px-4 py-3 border-b border-gray-100">
@@ -69,6 +78,63 @@
 </div>
 {% endif %}
 
+<!-- Pick-by-pick history -->
+{% if picks_by_week %}
+<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-800">Picks History</h2>
+  </div>
+  <div class="divide-y divide-gray-100">
+    {% for week_num, picks in picks_by_week.items() | sort %}
+    <details class="group">
+      <summary class="px-4 py-3 cursor-pointer flex justify-between items-center hover:bg-gray-50 list-none">
+        <span class="font-medium text-sm">Week {{ week_num }}</span>
+        <div class="flex items-center gap-3">
+          {% set wk_net = namespace(val=0) %}
+          {% for p in picks %}{% if p.net_profit is not none %}{% set wk_net.val = wk_net.val + p.net_profit %}{% endif %}{% endfor %}
+          {% if wk_net.val != 0 %}
+          <span class="text-xs font-bold tabular-nums {% if wk_net.val > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+            {% if wk_net.val > 0 %}+{% endif %}{{ "{:,}".format(wk_net.val) }}
+          </span>
+          {% endif %}
+          <svg class="w-4 h-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </summary>
+      <div class="px-4 pb-3 space-y-2">
+        {% for p in picks %}
+        <div class="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+          <div class="flex-1 min-w-0">
+            <span class="font-medium">{{ p.pick_team_name }}</span>
+            <span class="text-gray-400 text-xs ml-2">
+              {% if p.pick_side == 'FAVORITE' %}-{{ p.spread }}{% else %}+{{ p.spread }}{% endif %}
+              · vs {{ p.away_team if p.home_team == p.pick_team_name else p.home_team }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 ml-3 shrink-0">
+            <span class="tabular-nums text-gray-700">{{ "{:,}".format(p.pick_amount) }}</span>
+            {% if p.result == 'win' %}
+              <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">WIN +{{ "{:,}".format(p.net_profit) }}</span>
+            {% elif p.result == 'loss' %}
+              <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-0.5 rounded-full">LOSS {{ "{:,}".format(p.net_profit) }}</span>
+            {% elif p.result == 'push' %}
+              <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded-full">PUSH</span>
+            {% elif p.result == 'voided' %}
+              <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">VOID</span>
+            {% elif p.game_status == 'in_progress' %}
+              <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+            {% else %}
+              <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">Pending</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- Penalties -->
 {% if penalties %}
 <div class="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -82,5 +148,49 @@
     {% endfor %}
   </ul>
 </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% set chart_weeks = week_log | selectattr('end_points', 'ne', none) | list %}
+{% if chart_weeks | length > 1 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const labels = ["Start", {% for wk in chart_weeks %}"Wk {{ wk.week }}"{% if not loop.last %}, {% endif %}{% endfor %}];
+  const data   = [{{ (chart_weeks | first).start_points }}, {% for wk in chart_weeks %}{{ wk.end_points }}{% if not loop.last %}, {% endif %}{% endfor %}];
+  const ctx    = document.getElementById("pointsChart");
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: "#013369",
+        backgroundColor: "rgba(1,51,105,0.08)",
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          ticks: {
+            font: { size: 11 },
+            callback: v => v >= 1000 ? (v / 1000).toFixed(0) + "k" : v,
+          },
+        },
+      },
+      interaction: { mode: "index", intersect: false },
+    },
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}

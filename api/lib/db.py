@@ -110,6 +110,20 @@ def delete_unlocked_picks_not_in(player_id: str, keep_game_ids: list[str]) -> No
         q = q.not_.in_("game_id", keep_game_ids)
     q.execute()
 
+def get_player_picks_history(player_id: str, season: int) -> list[dict]:
+    """All picks for a player this season, ordered by week then kickoff."""
+    return (
+        get_client()
+        .table("picks_reveal_v")
+        .select("*")
+        .eq("player_id", player_id)
+        .eq("season", season)
+        .order("week")
+        .order("kickoff_at")
+        .execute()
+        .data
+    )
+
 def get_week_picks_reveal(season: int, week: int) -> list[dict]:
     return (
         get_client()
