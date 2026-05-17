@@ -182,6 +182,8 @@ async def week_view(request: Request, week: int):
                     "picks": [],
                 }
             players_picks_map[pid]["picks"].append(pick)
+        for pp in players_picks_map.values():
+            pp["total_net_profit"] = sum(p["net_profit"] or 0 for p in pp["picks"])
         players_picks = list(players_picks_map.values())
 
     return templates.TemplateResponse("week_view.html", {
