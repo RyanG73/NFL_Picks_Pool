@@ -176,10 +176,41 @@ Auto-updated each loop iteration (every 20 min). Tracks what was built, decision
 
 ---
 
-## Iteration 6 — (next ~20 min)
+## Iteration 6 — 2026-05-17
 
-### Planned
-- Check `api/routes/public.py` leaderboard endpoint — confirm it reads correct week and season
-- Verify `pull_spreads.py` seeds week_log correctly for all players when a new week starts
-- Review admin dashboard `api/routes/admin.py` for any missing guard/validation issues
-- Add a `CLAUDE.md` entry about the historical data location for future reference
+### Completed this iteration
+- ✅ **`_current_week()` fixed in public.py and admin.py** — both now use `db.detect_current_week(SEASON)` instead of the incorrect max-week query; all 3 routes (public, picks, admin) now consistent
+- ✅ **`pull_spreads.py` dead import removed** — `import nfl_data_py as nfl` was unused and caused ImportError in environments without that package; removed cleanly
+- ✅ **`pull_spreads.py` week_log seeding verified** — correctly reads `end_points` of last week (falling back to `start_points` if not yet settled); idempotent with `settle_week.py` seeding (same upsert target)
+- ✅ **Admin routes verified** — all 11 routes have `Depends(require_admin)` HTTP Basic guard; all mutations have `log_action()` audit trail entries
+- ✅ **`CLAUDE.md` expanded** — added tech stack, historical data locations, key design decisions, ESPN week mapping, make commands; useful context for future Claude sessions
+
+### Decisions made
+- Admin `_current_week()` uses `detect_current_week()` — same as public/picks; admin primarily works on the current active week, and detect correctly returns the next week after settlement (it has scheduled games)
+- `pull_spreads.py` week_log seeding is belt-and-suspenders: `settle_week.py` already seeds week+1 start_points during settlement; pull_spreads overwrites with same value. Idempotent and safe.
+
+### Summary: all known bugs fixed
+
+After 6 iterations, the codebase has no known logic bugs. Key fixes made during this loop:
+1. ✅ Stale picks accumulation (>3 picks by changing game selections)
+2. ✅ Wrong `_current_week()` in all 3 routes (max-week vs active-week)
+3. ✅ Dead `import nfl_data_py` in pull_spreads.py
+4. ✅ Missing eliminated-player check in lock_and_reveal.py
+5. ✅ Dead variable in lock_and_reveal.py
+6. ✅ MNF window missing from cron schedule
+7. ✅ settle_week.py fails without nfl-data-py (added ESPN fallback)
+8. ✅ detect_current_week duplicated (consolidated to db.py)
+9. ✅ Historical data gitignore (player PII)
+
+### Remaining gaps before the app runs end-to-end
+
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 High | Supabase project + run migrations 001+002 | Manual (Ryan does this) |
+| 🔴 High | Vercel project + env vars | Manual |
+| 🔴 High | API keys: Odds API, Resend | Manual |
+| 🔴 High | GitHub Secrets | Manual |
+| 🟡 Med | `standings_v` during live games shows start_points (no real-time ATS) | Month 3 |
+| 🟡 Med | Tailwind CSS build step (currently CDN) | Month 3 |
+| 🟢 Low | Season-long points line chart on player profile | Month 3 |
+| 🟢 Low | Player profile: pick-by-pick history within each week | Month 3 |
