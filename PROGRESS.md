@@ -422,7 +422,13 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 - `api/templates/admin/payout.html` — prize ladder summary chips, payout table (rank/player/points/P&L/prize/paid/Venmo link), 5-step checklist, quick-copy block
 - `api/templates/admin/dashboard.html` — "Season Payout ↗" button added to quick actions bar
 
-**All plan phases are now complete.**
+**All plan phases are now complete.** 26 commits on main.
+
+### Final doc pass (2026-05-17, loop iteration)
+
+- `RUNBOOK.md` — added "Season end: go to /admin/payout" step; added "ESPN spread discrepancy email" runbook entry
+- `README.md` — added migration 004 to setup steps; added smoke test section; corrected lock rule (Saturday noon ET); corrected prize description (top 15%, not 25%)
+- All Python files syntax-checked: clean
 
 ---
 
