@@ -1,4 +1,11 @@
 {% set prizes = ['$900','$700','$500','$250','$200','$100','$50'] %}
+{% if is_live %}
+<tr class="bg-red-50 border-b border-red-100">
+  <td colspan="5" class="px-4 py-1.5 text-center text-xs font-semibold text-red-600 tracking-wide">
+    🔴 LIVE — standings update as scores come in
+  </td>
+</tr>
+{% endif %}
 {% for row in standings %}
 {% set rank = loop.index %}
 <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors
@@ -26,12 +33,19 @@
   <!-- Current points -->
   <td class="px-4 py-3 text-right font-bold tabular-nums">
     {{ "{:,}".format(row.current_points) }}
+    {% if is_live %}
+      <span class="text-xs text-gray-400 font-normal ml-1">*</span>
+    {% endif %}
   </td>
 
   <!-- Week profit/loss -->
   <td class="px-4 py-3 text-right tabular-nums hidden sm:table-cell
       {% if row.week_profit > 0 %}text-green-600{% elif row.week_profit < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
-    {% if row.week_profit > 0 %}+{% endif %}{{ "{:,}".format(row.week_profit) if row.week_profit is not none else '—' }}
+    {% if row.week_profit != 0 %}
+      {% if row.week_profit > 0 %}+{% endif %}{{ "{:,}".format(row.week_profit) }}
+    {% else %}
+      —
+    {% endif %}
   </td>
 
   <!-- Prize -->
@@ -44,3 +58,10 @@
   </td>
 </tr>
 {% endfor %}
+{% if is_live %}
+<tr class="bg-gray-50 border-t border-gray-200">
+  <td colspan="5" class="px-4 py-1.5 text-center text-xs text-gray-400">
+    * implied from current scores · final standings settle Tuesday
+  </td>
+</tr>
+{% endif %}

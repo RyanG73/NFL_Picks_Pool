@@ -14,12 +14,108 @@ def _current_week() -> int:
     return db.detect_current_week(SEASON)
 
 
+def _compute_live_standings(season: int, week: int) -> tuple[list[dict], bool]:
+    """
+    Compute standings with implied live scores for in-progress games.
+
+    Returns (standings_list, is_live) where is_live=True means at least one
+    game is currently in_progress and standings reflect real-time implied results.
+
+    For settled picks (result != None): uses actual net_profit.
+    For in_progress / final picks without settlement yet: computes ATS implied result.
+    For scheduled picks: treated as 0 change (not started).
+    """
+    games = db.get_games(season, week)
+    is_live = any(g["status"] == "in_progress" for g in games)
+    has_active = any(g["status"] in ("in_progress", "final") for g in games)
+
+    if not has_active:
+        # No games started yet — use the static standings_v view
+        return db.get_standings(season, week), False
+
+    picks = (
+        db.get_client()
+        .table("picks_reveal_v")
+        .select("*")
+        .eq("season", season)
+        .eq("week", week)
+        .execute()
+        .data
+    )
+
+    week_logs = (
+        db.get_client()
+        .table("week_log")
+        .select("player_id, start_points")
+        .eq("season", season)
+        .eq("week", week)
+        .execute()
+        .data
+    )
+    start_by: dict[str, int] = {r["player_id"]: r["start_points"] for r in week_logs}
+
+    profits: dict[str, int] = {}
+    for pick in picks:
+        pid = pick["player_id"]
+        if pick.get("result") is not None:
+            # Already settled — use actual net_profit
+            profits[pid] = profits.get(pid, 0) + (pick["net_profit"] or 0)
+        elif pick["game_status"] in ("in_progress", "final"):
+            # Compute implied ATS result from current scores
+            home_score = pick["home_score"] or 0
+            away_score = pick["away_score"] or 0
+            if pick["home_team"] == pick["favorite_team"]:
+                fav_score, dog_score = home_score, away_score
+            else:
+                fav_score, dog_score = away_score, home_score
+            diff = fav_score - dog_score
+            spread = float(pick["spread"])
+            if diff > spread:
+                winner = "FAVORITE"
+            elif diff < spread:
+                winner = "UNDERDOG"
+            else:
+                winner = "push"
+            if winner == "push":
+                profit = 0
+            elif pick["pick_side"] == winner:
+                profit = pick["pick_amount"]
+            else:
+                profit = -pick["pick_amount"]
+            profits[pid] = profits.get(pid, 0) + profit
+
+    players = db.get_all_players(active_only=False)
+    standings = []
+    for player in players:
+        if not player["is_active"]:
+            continue
+        pid = player["id"]
+        start = start_by.get(pid, player.get("starting_points", 25_000))
+        profit = profits.get(pid, 0)
+        current = max(0, start + profit)
+        standings.append({
+            "player_id": pid,
+            "name": player["name"],
+            "paid_buyin": player["paid_buyin"],
+            "is_active": True,
+            "season": season,
+            "week": week,
+            "start_points": start,
+            "current_points": current,
+            "week_profit": profit,
+            "is_eliminated": current <= 0,
+        })
+
+    standings.sort(key=lambda s: -s["current_points"])
+    return standings, is_live
+
+
 # ── Leaderboard (home) ─────────────────────────────────────────────────────
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     week = _current_week()
-    standings = db.get_standings(SEASON, week)
+    standings, is_live = _compute_live_standings(SEASON, week)
     games = db.get_games(SEASON, week)
     banner = db.get_active_banner()
     return templates.TemplateResponse("leaderboard.html", {
@@ -29,19 +125,21 @@ async def home(request: Request):
         "season": SEASON,
         "games": games,
         "banner": banner,
+        "is_live": is_live,
         "is_fragment": False,
     })
 
 
 @router.get("/leaderboard-fragment", response_class=HTMLResponse)
 async def leaderboard_fragment(request: Request):
-    """htmx polling target — returns only the table rows."""
+    """htmx polling target — returns only the table rows (with live standings during games)."""
     week = _current_week()
-    standings = db.get_standings(SEASON, week)
+    standings, is_live = _compute_live_standings(SEASON, week)
     return templates.TemplateResponse("fragments/standings_rows.html", {
         "request": request,
         "standings": standings,
         "week": week,
+        "is_live": is_live,
     })
 
 

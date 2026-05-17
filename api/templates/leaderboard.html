@@ -35,12 +35,17 @@
 {% endif %}
 
 <!-- Live standings table (htmx polls every 60s during game windows) -->
-<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+<div class="bg-white rounded-xl shadow border {% if is_live %}border-red-200{% else %}border-gray-100{% endif %} overflow-hidden">
   <table class="w-full text-sm">
-    <thead class="bg-gray-50 border-b border-gray-200">
+    <thead class="{% if is_live %}bg-red-50{% else %}bg-gray-50{% endif %} border-b border-gray-200">
       <tr>
         <th class="px-4 py-3 text-left font-semibold text-gray-600 w-8">#</th>
-        <th class="px-4 py-3 text-left font-semibold text-gray-600">Player</th>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600">
+          Player
+          {% if is_live %}
+            <span class="ml-2 text-xs font-bold text-red-600 animate-pulse">● LIVE</span>
+          {% endif %}
+        </th>
         <th class="px-4 py-3 text-right font-semibold text-gray-600">Points</th>
         <th class="px-4 py-3 text-right font-semibold text-gray-600 hidden sm:table-cell">This Week</th>
         <th class="px-4 py-3 text-right font-semibold text-gray-600 hidden sm:table-cell">Prize</th>
