@@ -244,16 +244,36 @@ Key fixes made during Iterations 1–6:
 
 ### All non-manual code issues resolved
 
-After 8 iterations and 12 total bugs found/fixed, the codebase has no known logic, data, or template bugs. The manual setup steps (Supabase, Vercel, API keys, GitHub Secrets) are the only remaining blockers before the app can run end-to-end.
+After 8 iterations and 14 total bugs found/fixed, the codebase has no known logic, data, or template bugs. The manual setup steps (Supabase, Vercel, API keys, GitHub Secrets) are the only remaining blockers before the app can run end-to-end.
+
+---
+
+## Iteration 9 — 2026-05-17
+
+### Completed this iteration
+- ✅ **Python syntax check** — all 17 Python files (api/ + jobs/) pass `py_compile` with no errors
+- ✅ **`vercel.json` verified** — static route correct, cron paths match router prefix `/api/cron`, Vercel cron `Authorization: Bearer` header handled by `_verify()` in cron.py
+- ✅ **`.env.example` updated** — added `CRON_SECRET` (Vercel cron auth) and `ADMIN_EMAIL` (postponement alerts); both were used in code but missing from example
+- ✅ **README updated** — added `CRON_SECRET` to GitHub Secrets list with generation instructions
+- ✅ **`.single()` crash bug fixed (4 locations)** — Supabase `.single()` raises APIError (not returns None) when no row matches; invalid magic links would return 500 instead of 404. Fixed all 4 occurrences:
+  - `db.get_player_by_token()` → now `.limit(1)` returns None cleanly
+  - `db.get_game()` → now `.limit(1)` returns None cleanly
+  - `picks.py _available_points()` → `.limit(1)` returns 25,000 default for new players
+  - `admin.py adjust_points` → `.limit(1)` with explicit not-found redirect
+- ✅ **`RUNBOOK.md` created** — operations guide covering: pre-season setup, weekly timeline verification, 6 common incident scenarios (spread import fail, bad ESPN score, magic link broken, postponement, penalty waive, pick override), eliminated player behavior, season end process, and 4 Supabase debugging queries
+
+### Decisions made
+- `get_player_by_token` is the most security-sensitive fix — invalid tokens now get a clean 404 from the auth layer; previously a crafted token could cause a 500 that might leak stack trace info
+- RUNBOOK.md is committed to the repo (not just .claude/ memory) so Ryan can refer to it anytime, including when not in a Claude session
 
 ### Remaining gaps before the app runs end-to-end
 
 | Priority | Item | Status |
 |---|---|---|
-| 🔴 High | Supabase project + run migrations 001+002 | Manual (Ryan does this) |
-| 🔴 High | Vercel project + env vars | Manual |
+| 🔴 High | Supabase project + run migrations 001, 002, 004 | Manual (Ryan does this) |
+| 🔴 High | Vercel project + env vars (including CRON_SECRET) | Manual |
 | 🔴 High | API keys: Odds API, Resend | Manual |
-| 🔴 High | GitHub Secrets | Manual |
+| 🔴 High | GitHub Secrets (including CRON_SECRET, ADMIN_EMAIL) | Manual |
 | 🟡 Med | `standings_v` during live games shows start_points (no real-time ATS) | Month 3 |
 | 🟡 Med | Tailwind CSS build step (currently CDN) | Month 3 |
 | 🟢 Low | Season-long points line chart on player profile | Month 3 |
