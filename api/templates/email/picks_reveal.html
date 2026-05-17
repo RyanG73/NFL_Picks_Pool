@@ -1,0 +1,21 @@
+{% extends "email/base_email.html" %}
+{% block subject %}👀 Week {{ week }} Picks Are Live — NFL Picks Pool{% endblock %}
+{% block header_sub %}Week {{ week }} Picks Revealed{% endblock %}
+{% set picks_url = reveal_url %}
+
+{% block body %}
+<p>Picks are locked and live for Week {{ week }}! See what everyone bet — and start sweating those spreads.</p>
+
+<a href="{{ reveal_url }}" class="cta">👀 See All Week {{ week }} Picks</a>
+
+<p style="font-size:14px;color:#6b7280;text-align:center;">
+  The live leaderboard updates automatically every minute during games.<br>
+  Check back Sunday to watch your points move in real time.
+</p>
+
+<hr class="divider">
+
+<p style="font-size:13px;color:#6b7280;">
+  <strong>Reminder:</strong> Game results will be settled Tuesday morning. Updated standings and Week {{ week + 1 }} spreads will arrive Wednesday.
+</p>
+{% endblock %}

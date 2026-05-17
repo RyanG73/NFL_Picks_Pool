@@ -1,0 +1,83 @@
+{% extends "email/base_email.html" %}
+{% block subject %}Week {{ week }} Spreads — NFL Picks Pool{% endblock %}
+{% block header_sub %}Week {{ week }} · {{ season }} Season{% endblock %}
+
+{% block body %}
+<p>Hey {{ player.name }},</p>
+<p>Week {{ week }} spreads are live. You have until <strong>Saturday 11:59am ET</strong> to lock in your picks — each game also locks individually at kickoff.</p>
+
+<a href="{{ picks_url }}" class="cta">📋 Submit My Week {{ week }} Picks</a>
+
+<!-- Games table -->
+<p><strong>This Week's Games</strong></p>
+<table class="data">
+  <thead>
+    <tr>
+      <th>Day</th>
+      <th>Favorite</th>
+      <th>Spread</th>
+      <th>Underdog</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for g in games %}
+    <tr>
+      <td style="color:#6b7280;white-space:nowrap;">{{ g.kickoff_at[:10] }}</td>
+      <td><strong>{{ g.favorite_team }}</strong></td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;">-{{ g.spread }}</td>
+      <td>{{ g.underdog_team }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if standings %}
+<hr class="divider">
+<!-- Last week's standings -->
+<p><strong>Last Week's Standings</strong></p>
+{% set prizes = ['$900','$700','$500','$250','$200','$100','$50'] %}
+<table class="data">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Player</th>
+      <th style="text-align:right;">Points</th>
+      <th style="text-align:right;">This Week</th>
+      <th style="text-align:right;">Prize</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in standings %}
+    <tr {% if row.player_id == player.id %}style="background:#eff6ff;"{% endif %}>
+      <td style="color:#9ca3af;">{{ loop.index }}</td>
+      <td>
+        {{ row.name }}
+        {% if row.is_eliminated %}<span class="badge badge-red">OUT</span>{% endif %}
+        {% if row.player_id == player.id %} ← you{% endif %}
+      </td>
+      <td style="text-align:right;font-family:monospace;font-weight:700;">
+        {{ "{:,}".format(row.current_points) }}
+      </td>
+      <td style="text-align:right;font-family:monospace;
+        {% if row.week_profit > 0 %}color:#15803d;{% elif row.week_profit < 0 %}color:#dc2626;{% endif %}">
+        {% if row.week_profit is not none %}
+          {% if row.week_profit > 0 %}+{% endif %}{{ "{:,}".format(row.week_profit) }}
+        {% else %}—{% endif %}
+      </td>
+      <td style="text-align:right;">
+        {% if not row.is_eliminated and loop.index <= prizes|length %}
+          <span class="badge badge-green">{{ prizes[loop.index-1] }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<hr class="divider">
+<p style="font-size:13px;color:#6b7280;">
+  Min bet: 500 pts · Max: 3 games · Increments of 500 · All bets vs. the spread.<br>
+  Miss a week? <strong>-5,000 pts</strong> (escalates each additional miss).
+</p>
+{% endblock %}
