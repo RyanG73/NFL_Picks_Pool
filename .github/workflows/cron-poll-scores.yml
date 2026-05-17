@@ -6,6 +6,8 @@ on:
     # Game windows (ET): Thu 6pm, Sat noon (playoffs), Sun 1pm, Mon 8pm, Fri occasional
     - cron: '*/5 18-23 * * 4'   # Thursday 18:00–23:59 UTC (Thu 2–7pm ET)
     - cron: '*/5 0-4  * * 5'    # Thursday late / Friday morning UTC (Thu 8pm–Fri midnight ET)
+    - cron: '*/5 16-23 * * 6'   # Saturday playoff games (Sat noon–midnight ET; EST=UTC-5)
+    - cron: '*/5 0-5  * * 0'    # Saturday late rollover into Sunday UTC (Sat 7pm–midnight ET)
     - cron: '*/5 17-23 * * 0'   # Sunday 17:00–23:59 UTC (Sun 1–7pm ET)
     - cron: '*/5 0-4  * * 1'    # Sunday late / Monday morning UTC (Sun 8pm–Mon midnight ET)
     - cron: '*/5 0-4  * * 2'    # Monday Night Football (Mon 8pm–Tue midnight ET)
