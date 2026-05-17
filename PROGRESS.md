@@ -539,3 +539,62 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 | Vercel + API keys + GitHub Secrets | See `.env.example` |
 | Add 2026 players | Admin dashboard |
 | Run `make smoke WEEK=1 SEASON=2026` | Against staging Supabase |
+
+---
+
+## Final Audit Iteration — 2026-05-17
+
+### 5 more bugs found and fixed (48 commits total)
+
+**Bug 29 — `weekly_spreads.html`: hardcoded prize amounts from 2025**
+- Template contained `{% set prizes = ['$900','$700','$500','$250','$200','$100','$50'] %}` — hardcoded 2025 values that would never match the dynamic ladder computed by `compute_prize_ladder(paid_count)`.
+- `send_weekly_spreads()` accepted a `prizes` parameter but the template ignored it and used the hardcoded list.
+- Fix: removed the `{% set prizes %}` block; template now uses the passed `prizes` variable. `pull_spreads.py` now computes `prizes = compute_prize_ladder(max(paid_count, 1))` and passes it to `send_weekly_spreads()`.
+
+**Bug 30 — `magic_link.html`: "Top ~25%" should be "Top ~15%"**
+- Welcome email told new players "Top ~25% of players win cash prizes" — incorrect. Pool rules state top 15%.
+- Fix: corrected to "Top ~15%".
+
+**Bug 31 — `send_reminder()`: `app_url` computed but not passed to template**
+- `app_url = os.environ.get("APP_URL", "")` was set but not included in `_render()` kwargs.
+- `reminder.html` extends `base_email.html` which uses `{{ app_url }}` in the footer → all reminder email footers had broken links (empty `{{ app_url }}`).
+- Fix: added `app_url=app_url` to `_render()` call.
+
+**Bug 32 — `send_reminder()`: missing `season` parameter**
+- `season` was not passed to `_render()` kwargs; `base_email.html` footer renders "· {{ season }} Season ·" which would be blank.
+- Fix: added `season: int = 0` param with `CURRENT_SEASON` env fallback; passed `season=season` to `_render()`.
+
+**Bug 33 — `send_magic_link()`: missing `season` parameter**
+- Same pattern: `season` not in `_render()` kwargs → footer blank.
+- Fix: added `season: int = 0` param with fallback; passed to `_render()`.
+
+### Final schema verification
+- `migrations/001_init.sql` — complete read through all views:
+  - `standings_v`: joins week_log + players, `current_points = coalesce(end_points, start_points)`, `is_eliminated` when ≤ 0. ✅ Clean
+  - `picks_reveal_v`: joins picks + players + games + settlements (LEFT). All columns referenced in routes match exactly. ✅ Clean
+  - `game_pick_totals_v`: per-game aggregate totals (favorite_points, underdog_points, counts). ✅ Clean
+
+### Total bug count: 33 bugs fixed across all sessions
+
+28 from prior sessions (listed above), plus:
+29. Hardcoded 2025 prize amounts in weekly_spreads.html
+30. Wrong prize percentage (25% → 15%) in magic_link.html
+31. `send_reminder` missing `app_url` in template context → broken footer links
+32. `send_reminder` missing `season` → blank footer year
+33. `send_magic_link` missing `season` → blank footer year
+
+### Audit complete — all files reviewed
+
+Every Python file (17 files), every template (11 files), every workflow YAML (6 files), and all 4 migrations have been audited. No known bugs remain.
+
+### Only infrastructure remains
+
+| Item | Notes |
+|---|---|
+| Register domain | ~$12, point at Vercel after deploy |
+| Supabase project | Create, run migrations 001+002+004 (skip 003 in prod) |
+| Vercel + env vars | See `.env.example` for required vars |
+| API keys | The Odds API (free 500 req/mo), Resend (free 3k/mo) |
+| GitHub Secrets | SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY, ODDS_API_KEY, FROM_EMAIL, FROM_NAME, APP_URL, ADMIN_EMAIL, CRON_SECRET + Variable: CURRENT_SEASON=2026 |
+| Add 2026 players | Admin dashboard, before Week 1 kickoff |
+| Run `make smoke WEEK=1 SEASON=2026` | Against staging Supabase within 2 weeks of infra being up |
