@@ -18,12 +18,22 @@ the admin username/password (HTTP Basic auth at `/admin/`).
 
 3. **Confirm Venmo payments** — toggle "Paid" in admin when money arrives.
 
-4. **Dry-run week 1 spreads** (after Odds API key is set):
+4. **Run the end-to-end smoke test** against your staging Supabase project:
+   ```bash
+   make smoke WEEK=1 SEASON=2026
+   # or directly:
+   python jobs/smoke_test.py --season 2026 --week 1 --skip-email --verbose
+   ```
+   This seeds 3 fake players + 2 fake games, submits picks, locks them,
+   simulates final scores, settles, verifies outcomes, and cleans up.
+   All rows are deleted on teardown — safe to run against your real Supabase.
+
+5. **Dry-run week 1 spreads** (after Odds API key is set):
    ```bash
    python jobs/pull_spreads.py --week 1 --season 2026 --dry-run
    ```
 
-5. **Send onboarding email** — use admin broadcast to all players with
+6. **Send onboarding email** — use admin broadcast to all players with
    pool rules link and reminder to bookmark their picks URL.
 
 ---

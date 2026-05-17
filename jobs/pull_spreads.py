@@ -13,19 +13,48 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-from api.lib import db, spreads as spreads_lib, email_send
+from api.lib import db, email_send
+from api.lib.spreads import fetch_week_games, fetch_espn_spreads, cross_check_spreads
 
 
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[pull_spreads] season={season} week={week} dry_run={dry_run}")
 
     # Fetch from Odds API
-    games = spreads_lib.fetch_week_games(season, week)
+    games = fetch_week_games(season, week)
     print(f"  Fetched {len(games)} games from Odds API")
 
     if not games:
         print("  No games returned — check API key and season schedule")
         return
+
+    # ESPN cross-check (non-fatal; warn if delta ≥ 1.5 points)
+    try:
+        espn_spreads = fetch_espn_spreads()
+        warnings = cross_check_spreads(games, espn_spreads)
+        if warnings:
+            print(f"\n  ⚠️  SPREAD DISCREPANCIES (Odds API vs ESPN ≥ 1.5 pts):")
+            for w in warnings:
+                print(f"    {w}")
+            admin_email = os.environ.get("ADMIN_EMAIL")
+            if admin_email and not dry_run:
+                body = "\n".join([
+                    f"Week {week} spread discrepancies (Odds API vs ESPN consensus ≥ 1.5 pts):",
+                    "",
+                    *[f"  • {w}" for w in warnings],
+                    "",
+                    "Review and edit via /admin/games before Wednesday email goes out.",
+                ])
+                email_send.send_admin_alert(
+                    to=admin_email,
+                    subject=f"⚠️ Week {week} Spread Discrepancies — Action May Be Needed",
+                    body=body,
+                )
+                print(f"  Alert emailed to {admin_email}")
+        else:
+            print(f"  ESPN cross-check OK ({len(espn_spreads)} games checked)")
+    except Exception as exc:
+        print(f"  ESPN cross-check failed (non-fatal): {exc}")
 
     if dry_run:
         for g in games:

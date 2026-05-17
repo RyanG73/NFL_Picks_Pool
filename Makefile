@@ -1,4 +1,4 @@
-.PHONY: dev install lint replay test week season help
+.PHONY: dev install lint replay smoke test week season help
 
 # ── Local dev ──────────────────────────────────────────────────────────────
 dev:
@@ -10,6 +10,9 @@ install:
 # ── Validation ─────────────────────────────────────────────────────────────
 replay:
 	python jobs/replay_test.py --season 2025 --show-diffs
+
+smoke:
+	python jobs/smoke_test.py --season $(SEASON) --week $(WEEK) --skip-email --verbose
 
 test: replay
 
@@ -38,3 +41,4 @@ help:
 	@echo "  make spreads WEEK=1 SEASON=2026   Dry-run spread fetch"
 	@echo "  make settle  WEEK=1 SEASON=2026   Dry-run settlement"
 	@echo "  make scores  WEEK=1 SEASON=2026   Fetch live scores (once)"
+	@echo "  make smoke   WEEK=1 SEASON=2026   End-to-end smoke test (needs live Supabase)"

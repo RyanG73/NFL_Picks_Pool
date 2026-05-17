@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 
 ODDS_API_BASE = "https://api.the-odds-api.com/v4"
+ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 SPORT = "americanfootball_nfl"
 REGIONS = "us"
 MARKETS = "spreads"
@@ -61,6 +62,58 @@ def _transform(raw: dict, season: int, week: int) -> dict:
         "kickoff_at": raw["commence_time"],
         "status": "scheduled",
     }
+
+
+def fetch_espn_spreads() -> dict[tuple[str, str], float]:
+    """
+    Return {(home_display_name, away_display_name): spread_magnitude} from ESPN.
+
+    Uses the same public scoreboard endpoint as poll_live_scores.py so no API key
+    is needed. Returns an empty dict (non-fatal) when ESPN has no odds available
+    (common early in the week before lines are posted).
+    """
+    resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+    results: dict[tuple[str, str], float] = {}
+    for event in data.get("events", []):
+        comp = event.get("competitions", [{}])[0]
+        odds_list = comp.get("odds", [])
+        if not odds_list:
+            continue
+        competitors = {c["homeAway"]: c for c in comp.get("competitors", [])}
+        home_name = competitors.get("home", {}).get("team", {}).get("displayName", "")
+        away_name = competitors.get("away", {}).get("team", {}).get("displayName", "")
+        if not home_name or not away_name:
+            continue
+        spread = odds_list[0].get("spread")  # absolute magnitude
+        if spread is not None:
+            results[(home_name, away_name)] = float(spread)
+    return results
+
+
+def cross_check_spreads(
+    games: list[dict],
+    espn_spreads: dict[tuple[str, str], float],
+    threshold: float = 1.5,
+) -> list[str]:
+    """
+    Compare Odds API spreads against ESPN consensus spreads.
+    Returns a list of human-readable warning strings for discrepancies >= threshold.
+    """
+    warnings = []
+    for g in games:
+        key = (g["home_team"], g["away_team"])
+        espn = espn_spreads.get(key)
+        if espn is None:
+            continue
+        delta = abs(float(g["spread"]) - espn)
+        if delta >= threshold:
+            warnings.append(
+                f"{g['favorite_team']} vs {g['underdog_team']}: "
+                f"Odds API={g['spread']}, ESPN={espn:.1f} (Δ={delta:.1f})"
+            )
+    return warnings
 
 
 def _extract_spread(raw: dict, home: str, away: str) -> tuple[float, str, str]:

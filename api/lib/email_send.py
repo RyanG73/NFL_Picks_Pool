@@ -92,6 +92,12 @@ def send_magic_link(player: dict) -> None:
     })
 
 
+def send_admin_alert(to: str, subject: str, body: str) -> None:
+    """Send a plain-text alert to the admin (Ryan)."""
+    html = f"<pre style='font-family:monospace'>{body}</pre>"
+    resend.Emails.send({"from": FROM, "to": to, "subject": subject, "html": html})
+
+
 def send_broadcast(players: list[dict], subject: str, body_html: str) -> None:
     """Mass-message all players."""
     to_addrs = [p["email"] for p in players]
