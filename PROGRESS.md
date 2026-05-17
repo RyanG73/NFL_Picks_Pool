@@ -430,6 +430,8 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 - `README.md` — added migration 004 to setup steps; added smoke test section; corrected lock rule (Saturday noon ET); corrected prize description (top 15%, not 25%)
 - All Python files syntax-checked: clean
 - **Bug fix**: all 5 GitHub Actions cron workflows had broken week auto-detection on scheduled runs — `nfl_data_py` (removed) was used in pull_spreads, and all others passed empty `--week ""` which would fail argparse. Fixed by replacing with `db.detect_current_week()` inline. Also changed week inputs from `required: true` to `required: false` to allow both manual and scheduled triggers.
+- **Bug fix**: `vercel.json` lock-and-reveal cron fired at `59 11 * * 6` = Saturday 7:59am EDT, before any game locks apply. Changed to `*/5 * * * *` (every 5 min, requires Vercel Pro). README updated with Hobby plan workaround.
+- **Bug fix**: `cron-pull-spreads.yml` was missing `ADMIN_EMAIL` secret — ESPN spread discrepancy alert emails would silently not send even when discrepancies were found.
 
 ---
 
