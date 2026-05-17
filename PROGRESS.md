@@ -595,6 +595,19 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 
 Every Python file (17 files), every template (11 files), every workflow YAML (6 files), and all 4 migrations have been audited. No known bugs remain.
 
+**Bug 35 — `picks.py` POST: locked picks not deducted before validation**
+- `_validate_picks()` received `available = start_points` without subtracting locked picks.
+- A player with a locked Thursday pick (e.g., 5,000 pts) could submit Sunday picks totalling up to `start_points`, ignoring the Thursday commitment — their total bets would exceed their balance.
+- The GET form correctly showed `remaining = available - already_used` (including locked), but the POST validation didn't enforce the same limit.
+- Fix: compute `locked_amount = sum(locked pick amounts)` from `existing_picks` and pass `effective_available = available - locked_amount` to `_validate_picks()`.
+
+**Bug 36 — `admin.py` broadcast: `"now()"` is not a valid Postgres timestamp literal**
+- `broadcasts` table `sent_at timestamptz` has no default. The insert used `"sent_at": "now()"`.
+- PostgreSQL does recognize `'now'` (without parens) as a special timestamp string, but `'now()'` with parentheses is not — it would fail the timestamptz cast or insert unexpected data.
+- Fix: compute `datetime.now(timezone.utc).isoformat()` in Python and pass a proper ISO 8601 string.
+
+### Running total: 36 bugs fixed across all sessions
+
 ### Only infrastructure remains
 
 | Item | Notes |
