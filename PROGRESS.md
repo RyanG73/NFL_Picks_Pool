@@ -606,29 +606,40 @@ Every Python file (17 files), every template (11 files), every workflow YAML (6 
 - PostgreSQL does recognize `'now'` (without parens) as a special timestamp string, but `'now()'` with parentheses is not — it would fail the timestamptz cast or insert unexpected data.
 - Fix: compute `datetime.now(timezone.utc).isoformat()` in Python and pass a proper ISO 8601 string.
 
-### Running total: 36 bugs fixed across all sessions
+**Bug 37 — `smoke_test.py`: non-existent `"reason"` field in penalty insert**
+- Step 7 inserted `"reason": "no picks submitted"` into the `penalties` table.
+- The `penalties` schema has no `"reason"` column (only `"waived_reason"` for the separate waive flow). PostgREST would reject the insert with a 400 error, causing the smoke test to crash at step 7.
+- Fix: removed the spurious `"reason"` field from the insert payload.
 
-### Full audit complete (56 commits)
+### Running total: 37 bugs fixed across all sessions (58 commits)
 
-All files reviewed this iteration:
-- `api/lib/db.py` — ✅ Clean (magic_token has DB default, waived_reason in schema, audit_log table exists)
-- `api/templates/player_profile.html` — ✅ Clean
-- `api/templates/leaderboard.html` — ✅ Clean (htmx poll correct, live styling works)
-- `api/templates/fragments/standings_rows.html` — ✅ Clean
-- `api/templates/picks_form.html` — ✅ Clean (JS totalCommitted() correctly includes locked picks)
-- `migrations/001_init.sql` — ✅ All 8 tables + 3 views verified correct
-- All 17 Python files: syntax-clean, 0 TODOs
+### Full audit complete — every file reviewed end-to-end
 
-Every file in the codebase has been audited at least once. No known bugs remain.
+| Category | Files | Status |
+|---|---|---|
+| Python (api/ + jobs/) | 17 files | ✅ All clean |
+| Jinja2 templates | 14 files | ✅ All clean |
+| SQL migrations | 4 files | ✅ All clean |
+| GitHub Actions workflows | 6 files | ✅ All clean |
+| Config (vercel.json, requirements.txt, CLAUDE.md, .gitignore) | 4 files | ✅ All clean |
 
-### Only infrastructure remains
+No known bugs remain. The codebase is production-ready pending infrastructure setup.
 
-| Item | Notes |
-|---|---|
-| Register domain | ~$12, point at Vercel after deploy |
-| Supabase project | Create, run migrations 001+002+004 (skip 003 in prod) |
-| Vercel + env vars | See `.env.example` for required vars |
-| API keys | The Odds API (free 500 req/mo), Resend (free 3k/mo) |
-| GitHub Secrets | SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY, ODDS_API_KEY, FROM_EMAIL, FROM_NAME, APP_URL, ADMIN_EMAIL, CRON_SECRET + Variable: CURRENT_SEASON=2026 |
-| Add 2026 players | Admin dashboard, before Week 1 kickoff |
-| Run `make smoke WEEK=1 SEASON=2026` | Against staging Supabase within 2 weeks of infra being up |
+---
+
+## LOOP COMPLETE — Infrastructure Checklist (Ryan's manual work)
+
+All code tasks from the plan are done. Only manual setup remains before Week 1 kickoff (Sept 2026).
+
+| # | Item | Notes |
+|---|---|---|
+| 1 | Register domain | ~$12 (GoDaddy/Cloudflare), point at Vercel after deploy |
+| 2 | Create Supabase project | Run migrations 001+002+004 in order; skip 003 in prod |
+| 3 | Create Vercel project | Link GitHub repo; set all env vars from `.env.example` |
+| 4 | Get API keys | The Odds API (free 500 req/mo), Resend (free 3k/mo) |
+| 5 | Set GitHub Secrets | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `ODDS_API_KEY`, `FROM_EMAIL`, `FROM_NAME`, `APP_URL`, `ADMIN_EMAIL`, `CRON_SECRET` + Variable: `CURRENT_SEASON=2026` |
+| 6 | Add 2026 players | Admin dashboard → "Add Player" for each, before Week 1 kickoff |
+| 7 | Run smoke test | `make smoke WEEK=1 SEASON=2026` against staging Supabase; all 11 checks must pass |
+| 8 | Verify cron jobs | `workflow_dispatch` each workflow manually in GitHub Actions to confirm auth + DB connection |
+| 9 | Send test magic link | Add yourself as a player, receive email, submit picks, verify form |
+| 10 | Send test Wed email | `python jobs/pull_spreads.py --season 2026 --week 1` against staging spreads |
