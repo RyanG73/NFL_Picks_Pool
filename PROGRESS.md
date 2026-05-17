@@ -433,6 +433,8 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 - **Bug fix**: `vercel.json` lock-and-reveal cron fired at `59 11 * * 6` = Saturday 7:59am EDT, before any game locks apply. Changed to `*/5 * * * *` (every 5 min, requires Vercel Pro). README updated with Hobby plan workaround.
 - **Bug fix**: `cron-pull-spreads.yml` was missing `ADMIN_EMAIL` secret — ESPN spread discrepancy alert emails would silently not send even when discrepancies were found.
 - **Bug fix**: `base.html` nav "This Week" link used `{{ current_week }}` but no route passed that variable (all pass `week`). Always linked to `/week/1`. Fixed to use `{{ week | default(1) }}` and added `week` to `player_profile` and `payout_page` template contexts.
+- **Bug fix**: `send_reminders.py` used PostgREST embedded filter `.eq("games.season", ...)` which filters the embedded resource not parent rows — could incorrectly mark players who picked ANY week as "submitted." Fixed to use game ID prefetch + `.in_("game_id", ...)` pattern (same as `lock_and_reveal.py`). Also guarded against no-games-found case.
+- **Bug fix**: `email_send.send_picks_reveal()` and `send_broadcast()` would crash with IndexError on `to_addrs[0]` if players list is empty. Added early return guards.
 
 ---
 
