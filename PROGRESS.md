@@ -608,6 +608,19 @@ Every Python file (17 files), every template (11 files), every workflow YAML (6 
 
 ### Running total: 36 bugs fixed across all sessions
 
+### Full audit complete (56 commits)
+
+All files reviewed this iteration:
+- `api/lib/db.py` — ✅ Clean (magic_token has DB default, waived_reason in schema, audit_log table exists)
+- `api/templates/player_profile.html` — ✅ Clean
+- `api/templates/leaderboard.html` — ✅ Clean (htmx poll correct, live styling works)
+- `api/templates/fragments/standings_rows.html` — ✅ Clean
+- `api/templates/picks_form.html` — ✅ Clean (JS totalCommitted() correctly includes locked picks)
+- `migrations/001_init.sql` — ✅ All 8 tables + 3 views verified correct
+- All 17 Python files: syntax-clean, 0 TODOs
+
+Every file in the codebase has been audited at least once. No known bugs remain.
+
 ### Only infrastructure remains
 
 | Item | Notes |
