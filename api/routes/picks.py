@@ -13,9 +13,7 @@ SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 
 
 def _current_week() -> int:
-    from api.lib.db import get_client
-    res = get_client().table("games").select("week").eq("season", SEASON).order("week", desc=True).limit(1).execute()
-    return res.data[0]["week"] if res.data else 1
+    return db.detect_current_week(SEASON)
 
 
 def _available_points(player_id: str, week: int) -> int:
@@ -151,6 +149,12 @@ async def submit_picks(
             "errors": errors,
             "success": False,
         })
+
+    # Remove any previously submitted picks that are no longer in this submission.
+    # This handles the case where a player changes which games they picked.
+    # Locked picks (games already kicked off) are preserved automatically.
+    submitted_game_ids = [gid for gid in game_ids if gid]
+    db.delete_unlocked_picks_not_in(player["id"], submitted_game_ids)
 
     # Write picks (upsert — replaces prior submission for that game)
     for gid, side, amount in zip(game_ids, sides, amounts):

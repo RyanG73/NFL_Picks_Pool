@@ -103,6 +103,13 @@ def upsert_pick(player_id: str, game_id: str, pick_side: str, pick_amount: int) 
 def delete_pick(player_id: str, game_id: str) -> None:
     get_client().table("picks").delete().eq("player_id", player_id).eq("game_id", game_id).execute()
 
+def delete_unlocked_picks_not_in(player_id: str, keep_game_ids: list[str]) -> None:
+    """Delete all unlocked picks for a player except the specified game IDs."""
+    q = get_client().table("picks").delete().eq("player_id", player_id).is_("locked_at", "null")
+    if keep_game_ids:
+        q = q.not_.in_("game_id", keep_game_ids)
+    q.execute()
+
 def get_week_picks_reveal(season: int, week: int) -> list[dict]:
     return (
         get_client()

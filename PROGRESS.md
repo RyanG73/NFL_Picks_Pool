@@ -115,10 +115,41 @@ Auto-updated each loop iteration (every 20 min). Tracks what was built, decision
 
 ---
 
-## Iteration 4 — (next ~20 min)
+## Iteration 4 — 2026-05-17
+
+### Completed this iteration
+- ✅ **`cron-poll-scores.yml`** — added MNF window (Mon 20:00–Tue 04:00 UTC) and Friday game window; fixed Thursday late window; all comment blocks updated
+- ✅ **`api/lib/settlement.py` voided path verified** — `ats_winner()` returns `"voided"` when `status == "voided"`, `settle_pick()` returns `("voided", 0)` — matches `settle_game_picks()` SQL function behavior exactly
+- ✅ **`api/lib/db.detect_current_week(season)`** — shared helper in db.py; queries `status IN ('scheduled','in_progress')` ordered by week ASC; falls back to max week at season end
+- ✅ **`settle_week.py` ESPN fallback** — tries nfl-data-py first, falls back to ESPN public scoreboard API (stdlib-only urllib.request + json); both paths keyed by ESPN event ID; `_POOL_WEEK_MAP` correctly maps all 22 pool weeks
+- ✅ **`poll_live_scores.py` refactored** — removed local `detect_current_week()` copy; uses `db.detect_current_week()` instead
+- ✅ **Settlement pipeline consistency verified**: `pick_side` is `'FAVORITE'|'UNDERDOG'` throughout schema + code; `standings_v` uses `week_log.end_points` (pre-computed by settle_week.py); `get_standings()` correctly filters by season+week
+
+### Decisions made
+- `settle_week.py` tries nfl-data-py first because it's more authoritative (uses official nflreadr data, handles edge cases like double-headers); ESPN API is reliable fallback for environments where the package can't install
+- `standings_v` shows `coalesce(end_points, start_points)` during live game windows — correct behavior for v1 (no real-time ATS calc in the view; that's a Month 3 enhancement)
+- Friday game window added to cron even though NFL rarely schedules regular-season Friday games; it costs nothing to add and covers playoff edge cases + rare exceptions
+
+### Remaining gaps before the app runs end-to-end
+
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 High | Supabase project + run migrations 001+002 | Manual (Ryan does this) |
+| 🔴 High | Vercel project + env vars | Manual |
+| 🔴 High | API keys: Odds API, Resend | Manual |
+| 🔴 High | GitHub Secrets | Manual |
+| 🟡 Med | `api/routes/picks.py` — validate `pick_amount` is multiple of 500 and ≤ remaining balance server-side | Quick fix |
+| 🟡 Med | Tailwind CSS build step (currently CDN — fine for dev) | Month 3 |
+| 🟢 Low | Live standings during game windows (show implied ATS result in the standings view) | Month 3 |
+| 🟢 Low | Season-long points line chart on player profile page | Month 3 |
+| 🟢 Low | Player profile: pick-by-pick history within each week | Month 3 |
+
+---
+
+## Iteration 5 — (next ~20 min)
 
 ### Planned
-- Add MNF (Monday Night Football) and Friday night game window to cron-poll-scores.yml
-- Verify `api/lib/settlement.py` handles the `voided` status path correctly (matches settle_game_picks SQL function)
-- Add a `db.detect_current_week(season)` helper function to `api/lib/db.py` so it can be shared with other jobs
-- Review `settle_week.py` for the nfl-data-py dependency — add a fallback to ESPN final scores so it works in environments without nfl-data-py
+- Audit `api/routes/picks.py` server-side validation (pick_amount % 500, minimum 500, ≤ balance) — confirm it matches client-side JS
+- Check `api/routes/picks.py` handles the "3 picks max" limit server-side
+- Verify `lock_and_reveal.py` no-bet penalty escalation logic matches `settlement.py:compute_penalty_amount()`
+- Add `.gitignore` entries for `Historical_Code/` and `Historical_Results/` (large historical data; not needed in CI)

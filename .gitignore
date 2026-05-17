@@ -7,3 +7,11 @@ __pycache__/
 venv/
 node_modules/
 NFL_Picks_Pool_Plan.html
+
+# Historical data — kept locally, not committed (contains player PII)
+Historical_Results/
+Historical_Code/
+Rules/
+
+# Claude Code session data
+.claude/
