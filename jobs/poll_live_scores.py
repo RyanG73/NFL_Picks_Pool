@@ -29,25 +29,6 @@ from api.lib import db
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 
 
-def detect_current_week(season: int) -> int:
-    """Return the lowest week with scheduled or in-progress games, else the latest week."""
-    client = db.get_client()
-    res = (
-        client.table("games")
-        .select("week")
-        .eq("season", season)
-        .in_("status", ["scheduled", "in_progress"])
-        .order("week")
-        .limit(1)
-        .execute()
-    )
-    if res.data:
-        return res.data[0]["week"]
-    # Fall back to the max week with any games (season over edge case)
-    res2 = client.table("games").select("week").eq("season", season).order("week", desc=True).limit(1).execute()
-    return res2.data[0]["week"] if res2.data else 1
-
-
 def fetch_espn_scores() -> dict[str, dict]:
     """Return dict of {espn_event_id: {home_score, away_score, status}}."""
     resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
@@ -96,7 +77,7 @@ def update_games(season: int, week: int, scores: dict, dry_run: bool):
 
 def main(season: int, week: int | None = None, dry_run: bool = False, once: bool = False):
     if week is None:
-        week = detect_current_week(season)
+        week = db.detect_current_week(season)
         print(f"[poll_live_scores] auto-detected week={week} season={season}")
     else:
         print(f"[poll_live_scores] season={season} week={week}")

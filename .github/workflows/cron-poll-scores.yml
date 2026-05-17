@@ -2,13 +2,14 @@ name: Game Day — Poll Live Scores
 
 on:
   schedule:
-    # Thu 18:00–23:00 ET, Sun 13:00–23:00 ET, Mon 20:00–23:00 ET
-    # GitHub Actions cron is minute-level; run every minute during windows
-    # We use a 5-minute interval and rely on poll_live_scores --once for simplicity
-    - cron: '*/5 18-23 * * 4'   # Thursday
-    - cron: '*/5 17-23 * * 0'   # Sunday (17 UTC = 13 ET DST)
-    - cron: '*/5 0-4  * * 1'    # Sunday late / Monday morning UTC
-    - cron: '*/5 0-4  * * 5'    # Thursday late UTC
+    # All times UTC. ET offsets: EDT = UTC-4 (Mar–Nov), EST = UTC-5 (Nov–Mar).
+    # Game windows (ET): Thu 6pm, Sat noon (playoffs), Sun 1pm, Mon 8pm, Fri occasional
+    - cron: '*/5 18-23 * * 4'   # Thursday 18:00–23:59 UTC (Thu 2–7pm ET)
+    - cron: '*/5 0-4  * * 5'    # Thursday late / Friday morning UTC (Thu 8pm–Fri midnight ET)
+    - cron: '*/5 17-23 * * 0'   # Sunday 17:00–23:59 UTC (Sun 1–7pm ET)
+    - cron: '*/5 0-4  * * 1'    # Sunday late / Monday morning UTC (Sun 8pm–Mon midnight ET)
+    - cron: '*/5 0-4  * * 2'    # Monday Night Football (Mon 8pm–Tue midnight ET)
+    - cron: '*/5 17-23 * * 5'   # Friday games (occasional; covers 1–7pm ET window)
   workflow_dispatch:
     inputs:
       week:

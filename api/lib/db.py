@@ -56,6 +56,23 @@ def update_game(game_id: str, **fields) -> dict:
     res = get_client().table("games").update(fields).eq("id", game_id).execute()
     return res.data[0]
 
+def detect_current_week(season: int) -> int:
+    """Return the lowest week with scheduled or in-progress games, else the max week."""
+    client = get_client()
+    res = (
+        client.table("games")
+        .select("week")
+        .eq("season", season)
+        .in_("status", ["scheduled", "in_progress"])
+        .order("week")
+        .limit(1)
+        .execute()
+    )
+    if res.data:
+        return res.data[0]["week"]
+    res2 = client.table("games").select("week").eq("season", season).order("week", desc=True).limit(1).execute()
+    return res2.data[0]["week"] if res2.data else 1
+
 
 # ── Picks ──────────────────────────────────────────────────────────────────
 

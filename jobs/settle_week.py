@@ -1,6 +1,10 @@
 """
-Tuesday 09:00 ET — pull authoritative final scores from nfl-data-py,
-settle all picks, apply escalating no-bet penalties, advance week_log.
+Tuesday 09:00 ET — pull authoritative final scores, settle all picks,
+apply escalating no-bet penalties, advance week_log.
+
+Score source priority:
+  1. nfl-data-py (authoritative; requires pip install nfl-data-py)
+  2. ESPN public scoreboard API (stdlib-only fallback; used when nfl-data-py unavailable)
 
 Ported from Historical_Code/tuesday.R (lines 35–184).
 Idempotent: safe to re-run; will skip already-settled picks.
@@ -8,20 +12,26 @@ Idempotent: safe to re-run; will skip already-settled picks.
 Usage: python jobs/settle_week.py --week 1 --season 2026 [--dry-run]
 """
 import argparse
+import json
 import os
 import sys
+import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from dotenv import load_dotenv
 load_dotenv()
 
-import nfl_data_py as nfl
 from api.lib import db
 from api.lib.settlement import GameResult, ats_winner, settle_pick, compute_player_week_end_points
 
 
-def load_final_scores(season: int, week: int) -> dict[str, dict]:
-    """Pull authoritative scores from nfl-data-py keyed by ESPN game ID."""
+# Pool week → (ESPN seasontype, ESPN week) — mirrors replay_test.py
+_POOL_WEEK_MAP = {**{w: (2, w) for w in range(1, 19)},
+                  19: (3, 1), 20: (3, 2), 21: (3, 3), 22: (3, 5)}
+
+
+def _load_via_nfl_data_py(season: int, week: int) -> dict[str, dict]:
+    import nfl_data_py as nfl
     schedules = nfl.import_schedules([season])
     week_games = schedules[schedules["week"] == week]
     results = {}
@@ -35,11 +45,54 @@ def load_final_scores(season: int, week: int) -> dict[str, dict]:
     return results
 
 
+def _load_via_espn(season: int, week: int) -> dict[str, dict]:
+    """ESPN public scoreboard fallback — no external packages required."""
+    if week not in _POOL_WEEK_MAP:
+        return {}
+    seasontype, espn_week = _POOL_WEEK_MAP[week]
+    url = (
+        f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+        f"?season={season}&seasontype={seasontype}&week={espn_week}"
+    )
+    with urllib.request.urlopen(url, timeout=20) as r:
+        data = json.loads(r.read())
+
+    results = {}
+    for event in data.get("events", []):
+        comp = event["competitions"][0]
+        if comp.get("status", {}).get("type", {}).get("name") != "STATUS_FINAL":
+            continue
+        eid = event["id"]
+        teams = {c["homeAway"]: c for c in comp["competitors"]}
+        h = teams.get("home", {})
+        a = teams.get("away", {})
+        results[eid] = {
+            "home_team": h.get("team", {}).get("displayName", ""),
+            "away_team": a.get("team", {}).get("displayName", ""),
+            "home_score": int(h.get("score") or 0),
+            "away_score": int(a.get("score") or 0),
+        }
+    return results
+
+
+def load_final_scores(season: int, week: int) -> dict[str, dict]:
+    """Load final scores keyed by ESPN event ID. Tries nfl-data-py, falls back to ESPN."""
+    try:
+        scores = _load_via_nfl_data_py(season, week)
+        print(f"  Loaded {len(scores)} final scores from nfl-data-py")
+        return scores
+    except Exception as exc:
+        print(f"  nfl-data-py unavailable ({exc}); falling back to ESPN API")
+
+    scores = _load_via_espn(season, week)
+    print(f"  Loaded {len(scores)} final scores from ESPN API")
+    return scores
+
+
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[settle_week] season={season} week={week} dry_run={dry_run}")
 
     final_scores = load_final_scores(season, week)
-    print(f"  Loaded {len(final_scores)} final scores from nfl-data-py")
 
     games = db.get_games(season, week)
     players = db.get_all_players()
