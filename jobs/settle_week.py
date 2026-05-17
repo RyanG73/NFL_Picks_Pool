@@ -30,23 +30,16 @@ _POOL_WEEK_MAP = {**{w: (2, w) for w in range(1, 19)},
                   19: (3, 1), 20: (3, 2), 21: (3, 3), 22: (3, 5)}
 
 
-def _load_via_nfl_data_py(season: int, week: int) -> dict[str, dict]:
-    import nfl_data_py as nfl
-    schedules = nfl.import_schedules([season])
-    week_games = schedules[schedules["week"] == week]
-    results = {}
-    for _, row in week_games.iterrows():
-        results[str(row.get("espn_id", ""))] = {
-            "home_team": row["home_team"],
-            "away_team": row["away_team"],
-            "home_score": int(row.get("home_score", 0) or 0),
-            "away_score": int(row.get("away_score", 0) or 0),
-        }
-    return results
+def _load_via_nfl_data_py(season: int, week: int) -> dict[tuple, dict]:
+    # nfl-data-py uses team abbreviations ("KC") but the DB stores full display
+    # names from The Odds API ("Kansas City Chiefs"). Without a mapping table
+    # these can't be matched, so we raise to force the ESPN fallback which uses
+    # the same displayName format as the DB.
+    raise NotImplementedError("nfl-data-py team names (abbreviations) incompatible with DB (full display names)")
 
 
-def _load_via_espn(season: int, week: int) -> dict[str, dict]:
-    """ESPN public scoreboard fallback — no external packages required."""
+def _load_via_espn(season: int, week: int) -> dict[tuple, dict]:
+    """ESPN public scoreboard — keyed by (home_displayName, away_displayName)."""
     if week not in _POOL_WEEK_MAP:
         return {}
     seasontype, espn_week = _POOL_WEEK_MAP[week]
@@ -62,21 +55,25 @@ def _load_via_espn(season: int, week: int) -> dict[str, dict]:
         comp = event["competitions"][0]
         if comp.get("status", {}).get("type", {}).get("name") != "STATUS_FINAL":
             continue
-        eid = event["id"]
         teams = {c["homeAway"]: c for c in comp["competitors"]}
         h = teams.get("home", {})
         a = teams.get("away", {})
-        results[eid] = {
-            "home_team": h.get("team", {}).get("displayName", ""),
-            "away_team": a.get("team", {}).get("displayName", ""),
+        h_name = h.get("team", {}).get("displayName", "")
+        a_name = a.get("team", {}).get("displayName", "")
+        results[(h_name, a_name)] = {
             "home_score": int(h.get("score") or 0),
             "away_score": int(a.get("score") or 0),
         }
     return results
 
 
-def load_final_scores(season: int, week: int) -> dict[str, dict]:
-    """Load final scores keyed by ESPN event ID. Tries nfl-data-py, falls back to ESPN."""
+def load_final_scores(season: int, week: int) -> dict[tuple, dict]:
+    """Load final scores keyed by (home_team, away_team) display name pair.
+
+    Tries nfl-data-py first (raises NotImplementedError due to name format
+    mismatch), falls back to ESPN scoreboard API which uses the same full
+    display names stored in the DB by The Odds API.
+    """
     try:
         scores = _load_via_nfl_data_py(season, week)
         print(f"  Loaded {len(scores)} final scores from nfl-data-py")
@@ -99,10 +96,10 @@ def main(week: int, season: int, dry_run: bool = False):
 
     # ── Settle each game ────────────────────────────────────────────────────
     for game in games:
-        eid = game.get("espn_event_id", "")
-        score = final_scores.get(eid)
+        key = (game["home_team"], game["away_team"])
+        score = final_scores.get(key)
         if not score:
-            print(f"  ⚠ No final score found for {game['favorite_team']} vs {game['underdog_team']} (ESPN ID: {eid})")
+            print(f"  ⚠ No final score found for {game['home_team']} vs {game['away_team']}")
             continue
 
         gr = GameResult(
