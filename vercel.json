@@ -13,7 +13,7 @@
   "crons": [
     {
       "path": "/api/cron/lock-and-reveal",
-      "schedule": "59 11 * * 6"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/detect-cancellations",

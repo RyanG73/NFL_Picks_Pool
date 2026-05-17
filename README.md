@@ -58,6 +58,8 @@ vercel
 
 Add every `.env` variable in Vercel dashboard → Settings → Environment Variables.
 
+> **Vercel plan note**: The `vercel.json` cron for pick-locking runs every 5 minutes (`*/5 * * * *`). This requires the **Vercel Pro** plan ($20/mo). On Hobby (free), cron jobs fire at most daily — pick locking will still work correctly via server-side validation in the picks form; only the DB `locked_at` field will lag until Tuesday settlement. If staying on Hobby, remove the `lock-and-reveal` cron from `vercel.json` and rely on the GitHub Actions `cron-lock-and-reveal.yml` (fires Saturday afternoon).
+
 ### 5. Set GitHub Secrets
 
 Repo → Settings → Secrets and Variables → Actions:

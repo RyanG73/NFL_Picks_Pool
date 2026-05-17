@@ -35,6 +35,7 @@ jobs:
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
           FROM_NAME: ${{ secrets.FROM_NAME }}
           APP_URL: ${{ secrets.APP_URL }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
         run: |
           WEEK="${{ inputs.week }}"
