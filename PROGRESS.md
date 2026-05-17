@@ -218,7 +218,16 @@ Key fixes made during Iterations 1–6:
 - Team name matching is robust for NFL (teams don't move mid-season, and ESPN/Odds API both use canonical "City Team" format like "Kansas City Chiefs"). This approach avoids any ID translation layer.
 
 ### Running bug count total (all sessions)
-1. ✅ Stale picks accumulation  2. ✅ Wrong _current_week() x3  3. ✅ Dead nfl-data-py import  4. ✅ No eliminated-player check  5. ✅ Dead variable in lock_and_reveal  6. ✅ MNF window missing  7. ✅ nfl-data-py fallback  8. ✅ detect_current_week duplication  9. ✅ Historical PII in git  **10. ✅ ESPN ID mismatch (critical — scores would never update)**
+1. ✅ Stale picks accumulation  2. ✅ Wrong _current_week() x3  3. ✅ Dead nfl-data-py import  4. ✅ No eliminated-player check  5. ✅ Dead variable in lock_and_reveal  6. ✅ MNF window missing  7. ✅ nfl-data-py fallback  8. ✅ detect_current_week duplication  9. ✅ Historical PII in git  **10. ✅ ESPN ID mismatch (critical — scores would never update)**  **11. ✅ Picks form slot pre-population broken for 2+ picks**
+
+---
+
+## Iteration 8 — 2026-05-17
+
+### Completed this iteration
+- ✅ **`spreads.py` spread logic verified** — `_extract_spread()` handles home-favored (negative line) and away-favored cases correctly; pick-em fallback OK; ATS sign conventions match settlement.py
+- ✅ **`send_reminders.py` verified** — correctly finds players with no picks for current week using games join; active-only filter; no issues found
+- ✅ **Picks form slot pre-population fixed** — Jinja2 template was marking game options `selected` across ALL 3 slot selectors (not slot-aware); 2+ pick players saw broken pre-population. Fixed by computing `slot_picks` server-side (sorted, padded to 3) and using `slot_picks[slot-1]` in template. Side button styling and amount now rendered server-side too; JS simplified to just `recalcRemaining()` on load.
 
 ### Remaining gaps
 
@@ -232,6 +241,10 @@ Key fixes made during Iterations 1–6:
 | 🟡 Med | Tailwind CSS build step (currently CDN) | Month 3 |
 | 🟢 Low | Season-long points line chart on player profile | Month 3 |
 | 🟢 Low | Player profile: pick-by-pick history | Month 3 |
+
+### All non-manual code issues resolved
+
+After 8 iterations and 12 total bugs found/fixed, the codebase has no known logic, data, or template bugs. The manual setup steps (Supabase, Vercel, API keys, GitHub Secrets) are the only remaining blockers before the app can run end-to-end.
 
 ### Remaining gaps before the app runs end-to-end
 
