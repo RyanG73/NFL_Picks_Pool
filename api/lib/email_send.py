@@ -16,7 +16,7 @@ def _render(template_name: str, **ctx) -> str:
     return _template_env.get_template(template_name).render(**ctx)
 
 
-def send_weekly_spreads(players: list[dict], week: int, season: int, games: list[dict], standings: list[dict]) -> None:
+def send_weekly_spreads(players: list[dict], week: int, season: int, games: list[dict], standings: list[dict], prizes: list[str] | None = None) -> None:
     """Wednesday email: spreads live + last week results."""
     app_url = os.environ.get("APP_URL", "")
     for player in players:
@@ -27,6 +27,7 @@ def send_weekly_spreads(players: list[dict], week: int, season: int, games: list
             season=season,
             games=games,
             standings=standings,
+            prizes=prizes or [],
             picks_url=f"{app_url}/p/{player['magic_token']}",
             app_url=app_url,
         )

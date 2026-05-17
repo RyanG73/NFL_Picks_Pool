@@ -15,6 +15,7 @@ load_dotenv()
 
 from api.lib import db, email_send
 from api.lib.spreads import fetch_week_games, fetch_espn_spreads, cross_check_spreads
+from api.lib.timewall import compute_prize_ladder
 
 
 def main(week: int, season: int, dry_run: bool = False):
@@ -80,9 +81,11 @@ def main(week: int, season: int, dry_run: bool = False):
 
     # Last week's standings for the email
     standings = db.get_standings(season, week - 1) if week > 1 else []
+    paid_count = sum(1 for p in players if p.get("paid_buyin"))
+    prizes = compute_prize_ladder(max(paid_count, 1))
 
     # Send Wednesday email
-    email_send.send_weekly_spreads(players, week, season, games, standings)
+    email_send.send_weekly_spreads(players, week, season, games, standings, prizes=prizes)
     print(f"  Emailed {len(players)} players")
 
 
