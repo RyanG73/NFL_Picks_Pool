@@ -29,21 +29,31 @@ from api.lib import db
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 
 
-def fetch_espn_scores() -> dict[str, dict]:
-    """Return dict of {espn_event_id: {home_score, away_score, status}}."""
+def fetch_espn_scores() -> dict[tuple[str, str], dict]:
+    """
+    Return dict keyed by (home_team_display_name, away_team_display_name).
+
+    Does NOT key by ESPN event ID because the games table stores The Odds API
+    IDs in espn_event_id — a different ID system. Team names are stable and
+    match across both APIs. The ESPN event ID is stored in the value dict so
+    we can write it back to the DB on first match.
+    """
     resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
     resp.raise_for_status()
     data = resp.json()
     results = {}
     for event in data.get("events", []):
-        eid = event["id"]
         comp = event.get("competitions", [{}])[0]
         competitors = {c["homeAway"]: c for c in comp.get("competitors", [])}
         home = competitors.get("home", {})
         away = competitors.get("away", {})
+        home_name = home.get("team", {}).get("displayName", "")
+        away_name = away.get("team", {}).get("displayName", "")
+        if not home_name or not away_name:
+            continue
         status_type = event.get("status", {}).get("type", {})
         state = status_type.get("state", "pre")  # pre | in | post
-        results[eid] = {
+        results[(home_name, away_name)] = {
             "home_score": int(home.get("score", 0) or 0),
             "away_score": int(away.get("score", 0) or 0),
             "status": {
@@ -55,24 +65,27 @@ def fetch_espn_scores() -> dict[str, dict]:
     return results
 
 
-def update_games(season: int, week: int, scores: dict, dry_run: bool):
+def update_games(season: int, week: int, scores: dict[tuple[str, str], dict], dry_run: bool):
     games = db.get_games(season, week)
     for game in games:
         if game["status"] in ("voided", "final"):
             continue
-        eid = game.get("espn_event_id")
-        if not eid or eid not in scores:
+        key = (game["home_team"], game["away_team"])
+        score = scores.get(key)
+        if not score:
             continue
-        score = scores[eid]
         if (
             game["home_score"] == score["home_score"]
             and game["away_score"] == score["away_score"]
             and game["status"] == score["status"]
         ):
-            continue  # No change
+            continue
         print(f"  Update {game['home_team']} {score['home_score']}–{score['away_score']} {game['away_team']} [{score['status']}]")
         if not dry_run:
-            db.update_game(game["id"], **score)
+            db.update_game(game["id"],
+                           home_score=score["home_score"],
+                           away_score=score["away_score"],
+                           status=score["status"])
 
 
 def main(season: int, week: int | None = None, dry_run: bool = False, once: bool = False):

@@ -23,39 +23,50 @@ ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/sc
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", os.environ.get("FROM_EMAIL", ""))
 
 
-def fetch_postponed_ids() -> set[str]:
-    """Return ESPN event IDs that are postponed or cancelled."""
+def fetch_postponed_games() -> set[tuple[str, str]]:
+    """
+    Return (home_team_name, away_team_name) pairs for postponed/cancelled games.
+
+    Matches by team name (not ESPN event ID) because espn_event_id in the DB
+    stores The Odds API's ID, which is a different system.
+    """
     resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
     resp.raise_for_status()
     events = resp.json().get("events", [])
-    flagged = set()
+    flagged: set[tuple[str, str]] = set()
     for event in events:
         status_type = event.get("status", {}).get("type", {})
-        if status_type.get("shortDetail", "").upper() in ("POST", "CANC", "POSTPONED"):
-            flagged.add(event["id"])
+        if status_type.get("shortDetail", "").upper() not in ("POST", "CANC", "POSTPONED"):
+            continue
+        comp = event.get("competitions", [{}])[0]
+        competitors = {c["homeAway"]: c for c in comp.get("competitors", [])}
+        home_name = competitors.get("home", {}).get("team", {}).get("displayName", "")
+        away_name = competitors.get("away", {}).get("team", {}).get("displayName", "")
+        if home_name and away_name:
+            flagged.add((home_name, away_name))
     return flagged
 
 
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[detect_cancellations] season={season} week={week}")
 
-    postponed_espn_ids = fetch_postponed_ids()
-    if not postponed_espn_ids:
+    postponed_games = fetch_postponed_games()
+    if not postponed_games:
         print("  No postponed/cancelled games detected")
         return
 
     games = db.get_games(season, week)
     newly_flagged = []
     for game in games:
-        eid = game.get("espn_event_id", "")
-        if eid not in postponed_espn_ids:
+        if (game["home_team"], game["away_team"]) not in postponed_games:
             continue
         if game["status"] in ("voided", "postponed"):
             continue  # Already handled
         print(f"  ⚠ Flagging postponed: {game['favorite_team']} vs {game['underdog_team']}")
         if not dry_run:
             db.update_game(game["id"], status="postponed")
-            db.log_action("flag_postponed", {"game_id": game["id"], "espn_id": eid})
+            db.log_action("flag_postponed", {"game_id": game["id"],
+                                              "teams": f"{game['home_team']} vs {game['away_team']}"})
         newly_flagged.append(game)
 
     if newly_flagged and not dry_run and ADMIN_EMAIL:
