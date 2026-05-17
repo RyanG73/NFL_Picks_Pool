@@ -145,9 +145,13 @@ async def submit_picks(
         except ValueError:
             amounts.append(0)
 
-    errors = _validate_picks(game_ids, sides, amounts, games_by_id, available, sat_noon)
-
+    # Deduct locked picks before validating, so a player who already locked a
+    # Thursday pick can't over-commit on Sunday games.
     existing_picks = {p["game_id"]: p for p in db.get_player_picks(player["id"], SEASON, week)}
+    locked_amount = sum(p["pick_amount"] for p in existing_picks.values() if p.get("locked_at"))
+    effective_available = available - locked_amount
+
+    errors = _validate_picks(game_ids, sides, amounts, games_by_id, effective_available, sat_noon)
 
     if errors:
         already_used = sum(p["pick_amount"] for p in existing_picks.values())
