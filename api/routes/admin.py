@@ -209,6 +209,7 @@ async def payout_page(request: Request, _=Depends(require_admin)):
         "paid_count": paid_count,
         "final_week": final_week,
         "season": SEASON,
+        "week": final_week,
     })
 
 

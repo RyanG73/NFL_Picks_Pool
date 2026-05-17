@@ -220,4 +220,5 @@ async def player_profile(request: Request, player_id: str):
         "penalties": penalties,
         "picks_by_week": picks_by_week,
         "season": SEASON,
+        "week": _current_week(),
     })
