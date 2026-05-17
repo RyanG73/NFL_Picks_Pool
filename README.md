@@ -22,9 +22,10 @@ Fully automated NFL picks pool web app. 40–50 players, $50 buy-in, 25,000 star
 1. Create a new project at supabase.com
 2. Go to **SQL Editor** and run migrations in order:
    ```
-   migrations/001_init.sql        ← tables + views
-   migrations/002_functions.sql   ← stored procedures
-   migrations/003_seed_example.sql  ← dev seed only; skip in prod
+   migrations/001_init.sql              ← tables + views
+   migrations/002_functions.sql         ← stored procedures
+   migrations/004_games_team_unique.sql ← unique constraint (required)
+   # skip 003_seed_example.sql in prod — dev seed only
    ```
 3. Copy your project URL and **service role key** (Settings → API)
 
@@ -115,10 +116,16 @@ python jobs/detect_cancellations.py --week 1 --season 2026 --dry-run
 ## Validating settlement logic
 
 ```bash
+# Replay 2025 season (needs Historical_Results/ CSVs)
 python jobs/replay_test.py --season 2025 --show-diffs
+
+# End-to-end smoke test (needs live Supabase connection)
+make smoke WEEK=1 SEASON=2026
 ```
 
-Replays the 2025 season against `Historical_Results/Archive_2025/` CSVs. 0 mismatches = settlement logic is correct.
+Replay: validates settlement logic against 2025 historical data. 0 mismatches = correct.
+
+Smoke test: seeds 3 fake players + 2 games, submits picks, locks, simulates scores, settles, verifies outcomes, then tears down all seeded data. Run this against staging before going live.
 
 ---
 
@@ -138,7 +145,7 @@ Replays the 2025 season against `Historical_Results/Archive_2025/` CSVs. 0 misma
 
 - 25,000 starting pts · $50 buy-in (Venmo @Ryan-Gerda)
 - 1–3 picks/week ATS · min 500 pts · increments of 500 · max = current balance
-- Picks lock at each game's individual kickoff
+- Thursday games lock at kickoff · Sunday/Monday games lock **Saturday noon ET**
 - Miss a week: −5,000 pts (escalates +5,000 per consecutive miss)
 - Tie against spread → push (refund) · Cancelled game → voided (refund)
-- 0 points → eliminated · Top ~25% win prizes at Super Bowl
+- 0 points → eliminated · Top 15% of paid players win prizes at Super Bowl · ties split evenly
