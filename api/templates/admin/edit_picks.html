@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Edit Picks — {{ player.name }} Week {{ week }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="/admin/" class="text-sm text-gray-400 hover:text-gray-600">← Admin</a>
+  <h1 class="text-2xl font-bold mt-2">Edit Picks: {{ player.name }} · Week {{ week }}</h1>
+</div>
+
+<!-- Existing picks -->
+{% if picks %}
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100 font-semibold text-gray-700">Current Picks</div>
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-2 text-left text-gray-600">Game</th>
+        <th class="px-4 py-2 text-center text-gray-600">Side</th>
+        <th class="px-4 py-2 text-right text-gray-600">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pick in picks %}
+      <tr class="border-b border-gray-100 last:border-0">
+        <td class="px-4 py-2">
+          {% if pick.games %}
+            {{ pick.games.favorite_team }} -{{ pick.games.spread }} vs {{ pick.games.underdog_team }}
+          {% else %}
+            {{ pick.game_id }}
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-center">{{ pick.pick_side }}</td>
+        <td class="px-4 py-2 text-right font-mono">{{ "{:,}".format(pick.pick_amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Override form -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+  <h2 class="font-semibold text-gray-800 mb-4">Add / Override Pick</h2>
+  <form method="post" class="space-y-4">
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">Game</label>
+      <select name="game_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <option value="">— Choose game —</option>
+        {% for g in games %}
+        <option value="{{ g.id }}">{{ g.favorite_team }} -{{ g.spread }} vs {{ g.underdog_team }} ({{ g.kickoff_at[:10] }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">Side</label>
+      <select name="pick_side" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <option value="FAVORITE">FAVORITE</option>
+        <option value="UNDERDOG">UNDERDOG</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">Amount (multiples of 500)</label>
+      <input type="number" name="pick_amount" min="500" step="500" required
+             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <button type="submit"
+            class="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90">
+      Save Override
+    </button>
+  </form>
+</div>
+{% endblock %}

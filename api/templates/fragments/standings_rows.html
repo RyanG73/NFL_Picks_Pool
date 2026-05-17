@@ -1,0 +1,46 @@
+{% set prizes = ['$900','$700','$500','$250','$200','$100','$50'] %}
+{% for row in standings %}
+{% set rank = loop.index %}
+<tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors
+    {% if row.is_eliminated %}eliminated{% endif %}">
+
+  <!-- Rank -->
+  <td class="px-4 py-3 text-gray-400 font-mono text-sm">
+    {% if rank <= 3 %}
+      {{ ['🥇','🥈','🥉'][rank-1] }}
+    {% else %}
+      {{ rank }}
+    {% endif %}
+  </td>
+
+  <!-- Name + eliminated badge -->
+  <td class="px-4 py-3 font-medium">
+    <a href="/player/{{ row.player_id }}" class="hover:underline hover:text-blue-600">
+      {{ row.name }}
+    </a>
+    {% if row.is_eliminated %}
+      <span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">ELIMINATED</span>
+    {% endif %}
+  </td>
+
+  <!-- Current points -->
+  <td class="px-4 py-3 text-right font-bold tabular-nums">
+    {{ "{:,}".format(row.current_points) }}
+  </td>
+
+  <!-- Week profit/loss -->
+  <td class="px-4 py-3 text-right tabular-nums hidden sm:table-cell
+      {% if row.week_profit > 0 %}text-green-600{% elif row.week_profit < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+    {% if row.week_profit > 0 %}+{% endif %}{{ "{:,}".format(row.week_profit) if row.week_profit is not none else '—' }}
+  </td>
+
+  <!-- Prize -->
+  <td class="px-4 py-3 text-right hidden sm:table-cell">
+    {% if not row.is_eliminated and rank <= prizes | length %}
+      <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">
+        {{ prizes[rank-1] }}
+      </span>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}

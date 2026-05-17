@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Admin — NFL Picks Pool{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+  <span class="text-sm text-gray-500">Week {{ week }} · {{ season }} Season</span>
+</div>
+
+<!-- Quick stats -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold">{{ players | length }}</div>
+    <div class="text-xs text-gray-500">Total Players</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-green-700">{{ players | selectattr('paid_buyin') | list | length }}</div>
+    <div class="text-xs text-gray-500">Paid</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-red-600">{{ players | rejectattr('paid_buyin') | list | length }}</div>
+    <div class="text-xs text-gray-500">Unpaid</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold">${{ players | selectattr('paid_buyin') | list | length * 50 }}</div>
+    <div class="text-xs text-gray-500">Prize Pool</div>
+  </div>
+</div>
+
+<!-- Add player form -->
+<section class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+  <h2 class="font-semibold text-gray-800 mb-4">Add New Player</h2>
+  <form method="post" action="/admin/player/add" class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">Name</label>
+      <input type="text" name="name" required placeholder="Full name"
+             class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48">
+    </div>
+    <div>
+      <label class="text-xs text-gray-500 block mb-1">Email</label>
+      <input type="email" name="email" required placeholder="email@example.com"
+             class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-56">
+    </div>
+    <button type="submit"
+            class="bg-nfl-green text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
+      Add &amp; Send Link
+    </button>
+  </form>
+</section>
+
+<!-- Broadcast form -->
+<section class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+  <h2 class="font-semibold text-gray-800 mb-4">Broadcast Message</h2>
+  <form method="post" action="/admin/broadcast" class="space-y-3">
+    <input type="text" name="subject" required placeholder="Subject line"
+           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <textarea name="body_html" required rows="4" placeholder="HTML body (or plain text)"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"></textarea>
+    <input type="text" name="banner_text" placeholder="In-app banner text (optional)"
+           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <button type="submit"
+            class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
+      Send to All Players
+    </button>
+  </form>
+</section>
+
+<!-- Players table -->
+<section class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+    <h2 class="font-semibold text-gray-800">Players</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="px-4 py-2 text-left text-gray-600">Name</th>
+          <th class="px-4 py-2 text-left text-gray-600">Email</th>
+          <th class="px-4 py-2 text-center text-gray-600">Paid</th>
+          <th class="px-4 py-2 text-right text-gray-600">Points</th>
+          <th class="px-4 py-2 text-center text-gray-600">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for player in players %}
+        {% set standing = standings | selectattr('player_id', 'eq', player.id) | first %}
+        <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium">{{ player.name }}</td>
+          <td class="px-4 py-2 text-gray-500 text-xs">{{ player.email }}</td>
+          <td class="px-4 py-2 text-center">
+            <form method="post" action="/admin/player/{{ player.id }}/paid" class="inline">
+              <button type="submit"
+                      class="px-2 py-0.5 rounded-full text-xs font-bold
+                             {% if player.paid_buyin %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                {{ '✓ Paid' if player.paid_buyin else '✗ Unpaid' }}
+              </button>
+            </form>
+          </td>
+          <td class="px-4 py-2 text-right font-mono">
+            {{ "{:,}".format(standing.current_points) if standing else '—' }}
+          </td>
+          <td class="px-4 py-2 text-center">
+            <div class="flex justify-center gap-2">
+              <form method="post" action="/admin/player/{{ player.id }}/resend-link" class="inline">
+                <button type="submit" class="text-xs text-blue-600 hover:underline">Resend Link</button>
+              </form>
+              <a href="/admin/picks/{{ player.id }}/{{ week }}" class="text-xs text-purple-600 hover:underline">Edit Picks</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Games + void/correct controls -->
+<section class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-800">Week {{ week }} Games</h2>
+  </div>
+  <div class="space-y-0">
+    {% for g in games %}
+    <div class="px-4 py-3 border-b border-gray-100 last:border-0 flex flex-wrap items-center gap-4">
+      <div class="flex-1 text-sm">
+        <span class="font-semibold">{{ g.favorite_team }}</span>
+        <span class="text-gray-400 mx-1">-{{ g.spread }}</span>
+        <span>{{ g.underdog_team }}</span>
+        <span class="ml-2 text-xs text-gray-400">{{ g.kickoff_at[:16] | replace('T',' ') }} ET</span>
+        <span class="ml-2 px-2 py-0.5 rounded text-xs font-bold
+          {% if g.status == 'final' %}bg-gray-100 text-gray-600
+          {% elif g.status == 'voided' %}bg-red-100 text-red-700
+          {% elif g.status == 'in_progress' %}bg-green-100 text-green-700
+          {% else %}bg-blue-50 text-blue-600{% endif %}">
+          {{ g.status | upper }}
+        </span>
+      </div>
+      <div class="flex gap-2">
+        <!-- Correct score -->
+        <form method="post" action="/admin/game/{{ g.id }}/correct-score" class="flex gap-1 items-center text-xs">
+          <input type="number" name="home_score" value="{{ g.home_score or '' }}" placeholder="H"
+                 class="w-12 border border-gray-300 rounded px-1 py-0.5">
+          <span class="text-gray-400">-</span>
+          <input type="number" name="away_score" value="{{ g.away_score or '' }}" placeholder="A"
+                 class="w-12 border border-gray-300 rounded px-1 py-0.5">
+          <button type="submit" class="text-blue-600 hover:underline ml-1">Fix Score</button>
+        </form>
+        <!-- Void -->
+        {% if g.status != 'voided' %}
+        <form method="post" action="/admin/game/{{ g.id }}/void" class="flex gap-1 items-center text-xs">
+          <input type="text" name="reason" required placeholder="Void reason"
+                 class="border border-gray-300 rounded px-1 py-0.5 w-28">
+          <button type="submit" class="text-red-600 hover:underline" onclick="return confirm('Void this game?')">Void</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Audit log -->
+<section class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+  <div class="px-4 py-3 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-800">Recent Actions</h2>
+  </div>
+  <table class="w-full text-xs">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-2 text-left text-gray-500">Time</th>
+        <th class="px-4 py-2 text-left text-gray-500">Action</th>
+        <th class="px-4 py-2 text-left text-gray-500">Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in audit %}
+      <tr class="border-b border-gray-100 last:border-0">
+        <td class="px-4 py-2 text-gray-400 font-mono">{{ entry.performed_at[:16] | replace('T', ' ') }}</td>
+        <td class="px-4 py-2 font-semibold">{{ entry.action }}</td>
+        <td class="px-4 py-2 text-gray-500 font-mono text-xs truncate max-w-xs">{{ entry.payload | tojson }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

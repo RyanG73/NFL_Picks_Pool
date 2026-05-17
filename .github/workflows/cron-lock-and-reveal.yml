@@ -1,0 +1,40 @@
+name: Sat — Lock Picks & Reveal Email
+
+on:
+  schedule:
+    # Saturday 11:59am ET = Saturday 17:59 UTC (DST) / 16:59 UTC
+    - cron: '59 17 * * 6'
+  workflow_dispatch:
+    inputs:
+      week:
+        description: 'Week number'
+        required: true
+        type: number
+      dry_run:
+        type: boolean
+        default: false
+
+jobs:
+  lock-and-reveal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Apply no-bet penalties and send picks reveal email
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          FROM_NAME: ${{ secrets.FROM_NAME }}
+          APP_URL: ${{ secrets.APP_URL }}
+          CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
+        run: |
+          python jobs/lock_and_reveal.py \
+            --week "${{ inputs.week }}" \
+            --season "$CURRENT_SEASON" \
+            ${{ inputs.dry_run == 'true' && '--dry-run' || '' }}

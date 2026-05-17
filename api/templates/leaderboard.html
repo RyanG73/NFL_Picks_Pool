@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Week {{ week }} Standings — NFL Picks Pool{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Week {{ week }} Standings</h1>
+  <p class="text-sm text-gray-500 mt-1">{{ season }} Season · Updates live during games</p>
+</div>
+
+<!-- Games this week (quick summary bar) -->
+{% if games %}
+<div class="overflow-x-auto mb-6">
+  <div class="flex gap-3 pb-2">
+    {% for g in games %}
+    <div class="min-w-[160px] bg-white rounded-lg border border-gray-200 shadow-sm p-3 text-xs">
+      <div class="font-semibold text-gray-700 mb-1">
+        {{ g.kickoff_at | replace('T', ' ') | truncate(10, True, '') }} ·
+        {{ g.kickoff_at[11:16] }} ET
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="font-bold">{{ g.favorite_team | truncate(10, True, '') }}</span>
+        <span class="text-gray-400 mx-1">-{{ g.spread }}</span>
+        <span>{{ g.underdog_team | truncate(10, True, '') }}</span>
+      </div>
+      {% if g.status in ['in_progress', 'final'] %}
+      <div class="mt-1 text-center text-gray-500">
+        {{ g.home_score }} – {{ g.away_score }}
+        {% if g.status == 'final' %}<span class="text-red-600 font-bold ml-1">F</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Live standings table (htmx polls every 60s during game windows) -->
+<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600 w-8">#</th>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600">Player</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Points</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600 hidden sm:table-cell">This Week</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600 hidden sm:table-cell">Prize</th>
+      </tr>
+    </thead>
+    <tbody
+      id="standings-body"
+      hx-get="/leaderboard-fragment"
+      hx-trigger="every 60s"
+      hx-swap="innerHTML"
+    >
+      {% include "fragments/standings_rows.html" %}
+    </tbody>
+  </table>
+</div>
+
+<p class="text-xs text-gray-400 mt-3 text-right">
+  Refreshes automatically · Last updated just now
+</p>
+{% endblock %}

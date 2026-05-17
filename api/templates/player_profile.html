@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ player.name }} — NFL Picks Pool{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="/" class="text-sm text-gray-400 hover:text-gray-600">← Standings</a>
+  <h1 class="text-2xl font-bold mt-2">{{ player.name }}</h1>
+  <p class="text-sm text-gray-500">{{ season }} Season</p>
+</div>
+
+<!-- Season summary cards -->
+{% set final_weeks = week_log | selectattr('end_points', 'ne', none) | list %}
+{% if final_weeks %}
+{% set current = final_weeks | last %}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-gray-900">{{ "{:,}".format(current.end_points) }}</div>
+    <div class="text-xs text-gray-500 mt-1">Current Points</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold {% if current.end_points >= 25000 %}text-green-600{% else %}text-red-600{% endif %}">
+      {% if current.end_points >= 25000 %}+{% endif %}{{ "{:,}".format(current.end_points - 25000) }}
+    </div>
+    <div class="text-xs text-gray-500 mt-1">Season P&L</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold text-gray-900">{{ final_weeks | length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Weeks Played</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <div class="text-2xl font-bold {% if player.paid_buyin %}text-green-600{% else %}text-red-600{% endif %}">
+      {{ "✓ Paid" if player.paid_buyin else "⚠ Unpaid" }}
+    </div>
+    <div class="text-xs text-gray-500 mt-1">$50 Buy-in</div>
+  </div>
+</div>
+
+<!-- Week-by-week history -->
+<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-800">Week-by-Week</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-2 text-left text-gray-600">Week</th>
+        <th class="px-4 py-2 text-right text-gray-600">Start</th>
+        <th class="px-4 py-2 text-right text-gray-600">End</th>
+        <th class="px-4 py-2 text-right text-gray-600">P&L</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for wk in week_log %}
+      {% set pnl = (wk.end_points - wk.start_points) if wk.end_points is not none else none %}
+      <tr class="border-b border-gray-100 last:border-0">
+        <td class="px-4 py-2">
+          <a href="/week/{{ wk.week }}" class="hover:underline text-blue-600">Week {{ wk.week }}</a>
+        </td>
+        <td class="px-4 py-2 text-right tabular-nums">{{ "{:,}".format(wk.start_points) }}</td>
+        <td class="px-4 py-2 text-right tabular-nums">{{ "{:,}".format(wk.end_points) if wk.end_points is not none else '—' }}</td>
+        <td class="px-4 py-2 text-right tabular-nums font-semibold
+          {% if pnl is not none %}{% if pnl > 0 %}text-green-600{% elif pnl < 0 %}text-red-600{% else %}text-gray-400{% endif %}{% endif %}">
+          {% if pnl is not none %}{% if pnl > 0 %}+{% endif %}{{ "{:,}".format(pnl) }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Penalties -->
+{% if penalties %}
+<div class="bg-red-50 border border-red-200 rounded-xl p-4">
+  <h2 class="font-semibold text-red-800 mb-2">Penalties</h2>
+  <ul class="text-sm space-y-1">
+    {% for p in penalties %}
+    <li class="flex justify-between {% if p.waived %}line-through text-gray-400{% else %}text-red-700{% endif %}">
+      <span>Week {{ p.week }} · {{ p.consecutive_misses }}x consecutive miss</span>
+      <span class="font-mono">{{ "{:,}".format(p.amount) }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}
