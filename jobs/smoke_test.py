@@ -173,22 +173,32 @@ def simulate_final_scores(games: list[dict], season: int, week: int):
 
 def run_settlement(season: int, week: int):
     """Run settle_week settlement logic directly against seeded data."""
-    from api.lib.settlement import settle_pick, ats_winner
+    from api.lib.settlement import GameResult, settle_pick, ats_winner
     games = db.get_games(season, week)
     client = db.get_client()
     for game in games:
         if game["status"] != "final":
             continue
-        winner = ats_winner(game["favorite_team"], game["underdog_team"],
-                            game["spread"], game.get("home_team"),
-                            game.get("home_score", 0), game.get("away_score", 0),
-                            game.get("status", "final"))
+        home_score = int(game.get("home_score") or 0)
+        away_score = int(game.get("away_score") or 0)
+        fav_score = home_score if game["home_team"] == game["favorite_team"] else away_score
+        dog_score = home_score if game["home_team"] == game["underdog_team"] else away_score
+        gr = GameResult(
+            game_id=game["id"],
+            favorite_team=game["favorite_team"],
+            underdog_team=game["underdog_team"],
+            spread=float(game["spread"]),
+            favorite_score=fav_score,
+            underdog_score=dog_score,
+            status=game["status"],
+        )
+        winner = ats_winner(gr)
         picks = (
             client.table("picks").select("*, players(name)")
             .eq("game_id", game["id"]).execute().data
         )
         for pick in picks:
-            result_lbl, net = settle_pick(pick["pick_side"], winner, pick["pick_amount"])
+            result_lbl, net = settle_pick(pick["pick_side"], pick["pick_amount"], winner)
             client.table("settlements").upsert({
                 "pick_id": pick["id"],
                 "result": result_lbl,
@@ -207,13 +217,22 @@ def verify_standings(players: list[dict], games: list[dict], season: int, week: 
       Carol:  no picks → 25,000 (before penalty)
     """
     client = db.get_client()
+    game_ids = [g["id"] for g in games]
+    picks = client.table("picks").select("id, player_id").in_("game_id", game_ids).execute().data
+    pick_id_to_player = {p["id"]: p["player_id"] for p in picks}
+
     settlements_by_player: dict[str, int] = {}
-    for g in games:
-        picks = client.table("picks").select("player_id, pick_amount, pick_side").eq("game_id", g["id"]).execute().data
-        setts = client.table("settlements").select("net_profit, picks(player_id)").execute().data
+    if pick_id_to_player:
+        setts = (
+            client.table("settlements")
+            .select("net_profit, pick_id")
+            .in_("pick_id", list(pick_id_to_player.keys()))
+            .execute().data
+        )
         for s in setts:
-            pid = s["picks"]["player_id"]
-            settlements_by_player[pid] = settlements_by_player.get(pid, 0) + (s["net_profit"] or 0)
+            pid = pick_id_to_player.get(s["pick_id"])
+            if pid:
+                settlements_by_player[pid] = settlements_by_player.get(pid, 0) + (s["net_profit"] or 0)
 
     alice = next(p for p in players if p["name"] == "Smoke Alice")
     bob   = next(p for p in players if p["name"] == "Smoke Bob")
@@ -315,8 +334,13 @@ def main(season: int, week: int, skip_email: bool = False, verbose_mode: bool = 
         # Step 5: Settle
         log("\n[5/7] Running settlement...")
         run_settlement(season, week)
-        setts = client.table("settlements").select("id").execute().data
-        check("Settlements written (at least 1)", len(setts) >= 1)
+        seeded_picks = client.table("picks").select("id").in_("game_id", [g["id"] for g in games]).execute().data
+        seeded_pick_ids = [p["id"] for p in seeded_picks]
+        seeded_setts = (
+            client.table("settlements").select("id").in_("pick_id", seeded_pick_ids).execute().data
+            if seeded_pick_ids else []
+        )
+        check("Settlements written (at least 1)", len(seeded_setts) >= 1)
 
         # Step 6: Verify outcomes
         log("\n[6/7] Verifying pick outcomes...")
