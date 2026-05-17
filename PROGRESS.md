@@ -574,7 +574,14 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
   - `picks_reveal_v`: joins picks + players + games + settlements (LEFT). All columns referenced in routes match exactly. ✅ Clean
   - `game_pick_totals_v`: per-game aggregate totals (favorite_points, underdog_points, counts). ✅ Clean
 
-### Total bug count: 33 bugs fixed across all sessions
+**Bug 34 — `settle_week.py`: same ESPN ID mismatch as bug #10 (CRITICAL — settlements never ran)**
+- `main()` looked up `game.get("espn_event_id", "")` against `final_scores` keyed by ESPN's `event["id"]`.
+- `espn_event_id` stores The Odds API's own event ID — a completely different ID system.
+- All lookups silently returned `None`, so no games were ever settled (scores logged as "⚠ No final score found" for every game).
+- `_load_via_nfl_data_py` also broke (keyed by ESPN ID, same mismatch + uses team abbreviations "KC" not full names "Kansas City Chiefs").
+- Fix: key `final_scores` by `(home_team_displayName, away_team_displayName)` (matches DB values from Odds API). `_load_via_nfl_data_py` now raises `NotImplementedError` (abbrevs can't match DB full names) so ESPN fallback is always used. Lookup in `main()` changed to `(game["home_team"], game["away_team"])`.
+
+### Total bug count: 34 bugs fixed across all sessions
 
 28 from prior sessions (listed above), plus:
 29. Hardcoded 2025 prize amounts in weekly_spreads.html
@@ -582,6 +589,7 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 31. `send_reminder` missing `app_url` in template context → broken footer links
 32. `send_reminder` missing `season` → blank footer year
 33. `send_magic_link` missing `season` → blank footer year
+34. `settle_week.py` game score lookup by Odds API event ID vs ESPN event IDs → no games ever settled (critical)
 
 ### Audit complete — all files reviewed
 
