@@ -26,10 +26,10 @@ def _available_points(player_id: str, week: int) -> int:
         .eq("player_id", player_id)
         .eq("season", SEASON)
         .eq("week", week)
-        .single()
+        .limit(1)
         .execute()
     )
-    return res.data["start_points"] if res.data else 25_000
+    return res.data[0]["start_points"] if res.data else 25_000
 
 
 def _validate_picks(

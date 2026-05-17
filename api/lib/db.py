@@ -12,8 +12,8 @@ def get_client() -> Client:
 # ── Players ────────────────────────────────────────────────────────────────
 
 def get_player_by_token(token: str) -> dict | None:
-    res = get_client().table("players").select("*").eq("magic_token", token).single().execute()
-    return res.data
+    res = get_client().table("players").select("*").eq("magic_token", token).limit(1).execute()
+    return res.data[0] if res.data else None
 
 def get_all_players(active_only: bool = True) -> list[dict]:
     q = get_client().table("players").select("*")
@@ -45,8 +45,8 @@ def get_games(season: int, week: int) -> list[dict]:
     )
 
 def get_game(game_id: str) -> dict | None:
-    res = get_client().table("games").select("*").eq("id", game_id).single().execute()
-    return res.data
+    res = get_client().table("games").select("*").eq("id", game_id).limit(1).execute()
+    return res.data[0] if res.data else None
 
 def upsert_game(game: dict) -> dict:
     res = get_client().table("games").upsert(game, on_conflict="season,week,espn_event_id").execute()

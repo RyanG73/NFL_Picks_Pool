@@ -82,17 +82,20 @@ async def adjust_points(
 ):
     """Manually adjust a player's end-of-week points (for corrections or waived penalties)."""
     from api.lib.db import get_client
-    row = (
+    rows = (
         get_client()
         .table("week_log")
         .select("*")
         .eq("player_id", player_id)
         .eq("season", SEASON)
         .eq("week", week)
-        .single()
+        .limit(1)
         .execute()
         .data
     )
+    if not rows:
+        return RedirectResponse("/admin/?error=week_log_not_found", status_code=303)
+    row = rows[0]
     new_end = (row["end_points"] or row["start_points"]) + adjustment
     get_client().table("week_log").update({"end_points": new_end}).eq("id", row["id"]).execute()
     db.log_action("adjust_points", {

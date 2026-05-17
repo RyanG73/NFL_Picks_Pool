@@ -63,10 +63,14 @@ Repo → Settings → Secrets and Variables → Actions:
 
 ```
 SUPABASE_URL  SUPABASE_SERVICE_KEY  RESEND_API_KEY  ODDS_API_KEY
-FROM_EMAIL  FROM_NAME  APP_URL  ADMIN_EMAIL
+FROM_EMAIL  FROM_NAME  APP_URL  ADMIN_EMAIL  CRON_SECRET
 ```
 
 Variables (not secrets): `CURRENT_SEASON = 2026`
+
+> **`CRON_SECRET`**: generate with `python -c "import secrets; print(secrets.token_hex(32))"`.
+> Also add it to Vercel dashboard → Settings → Environment Variables so the Vercel cron
+> endpoints can verify requests.
 
 ### 6. First season kickoff (~2 weeks before Week 1)
 
