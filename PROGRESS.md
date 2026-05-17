@@ -386,7 +386,39 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 
 | Phase | Item | Priority |
 |---|---|---|
-| A4 | ESPN spread cross-check in `pull_spreads.py` | Medium |
-| A5 | End-of-season prize splitter + admin payout page | Low |
-| D | `jobs/smoke_test.py` end-to-end dry-run script | High (next 2 weeks) |
+| A4 | ESPN spread cross-check in `pull_spreads.py` | ✅ DONE (commit aee6eb2) |
+| D | `jobs/smoke_test.py` end-to-end dry-run script | ✅ DONE (commit aee6eb2) |
+| A5 | End-of-season prize splitter + admin payout page | Low — deferred |
 | C | Supabase, Vercel, API keys, GitHub Secrets | Ryan's manual work |
+
+### Loop Iteration — 2026-05-17 (continued)
+
+**A4 — ESPN spread cross-check (committed)**
+- `api/lib/spreads.py` — `fetch_espn_spreads()`: calls ESPN scoreboard API, returns `{(home, away): spread_magnitude}` (same key scheme as poll_live_scores)
+- `api/lib/spreads.py` — `cross_check_spreads(games, espn_spreads, threshold=1.5)`: compares Odds API vs ESPN; returns list of warning strings for discrepancies ≥ 1.5 pts
+- `api/lib/email_send.py` — `send_admin_alert(to, subject, body)`: plain-text admin notification via Resend
+- `jobs/pull_spreads.py` — calls ESPN cross-check after Odds API fetch; logs warnings; emails ADMIN_EMAIL if any discrepancy found and not dry-run; non-fatal (exception is caught)
+
+**Phase D — Smoke test (committed)**
+- `jobs/smoke_test.py` — 7-step end-to-end pipeline test against live Supabase staging project:
+  1. Seeds 3 fake players (unique `@example.invalid` emails, UUID-tagged) + 2 fake games (Thu past + Sun future)
+  2. Submits picks: Alice both games (FAVORITE 5k each), Bob game 1 only (UNDERDOG 2k), Carol skips
+  3. Locks via `lock_kicked_off_picks()` RPC — Thursday game should lock
+  4. Simulates final scores: GB 24-10 (fav covers), KC 20-14 (dog covers by 6 < 10.5)
+  5. Settles using `api/lib/settlement.py` logic directly
+  6. Verifies: Alice net=0, Bob net=-2000
+  7. Applies no-bet penalty to Carol (−5000)
+  8. Teardown: deletes all seeded players + games (cascade handles picks/settlements/penalties)
+- 11 PASS/FAIL checks; exit code 0 if all pass
+- `make smoke WEEK=1 SEASON=2026` or `python jobs/smoke_test.py --verbose --skip-email`
+- RUNBOOK.md step 4 updated to reference smoke test before dry-run spreads
+
+### Remaining items (code essentially complete)
+
+| Item | Priority |
+|---|---|
+| A5: End-of-season payout admin page | Low — deferred until first season ends |
+| Supabase project setup | Ryan's manual step |
+| Vercel + env vars + API keys | Ryan's manual step |
+| Add 2026 players | Ryan — after infra is up |
+| Run `make smoke` against staging | Ryan — target: within 2 weeks |
