@@ -48,10 +48,46 @@ Auto-updated each loop iteration (every 20 min). Tracks what was built, decision
 
 ---
 
-## Iteration 2 — (next ~20 min)
+## Iteration 2 — 2026-05-17
+
+### Completed this iteration
+- ✅ **Replay test harness** (`jobs/replay_test.py`):
+  - Loads 2025 CSVs (pick_log, line_log, week_log, no_bet_log) from `Historical_Results/Archive_2025/`
+  - Fetches final scores from nfl-data-py
+  - Computes ATS winner per game using `api/lib/settlement.py` logic
+  - Compares computed end_points vs ground-truth week_log.csv for every player-week
+  - CLI: `python jobs/replay_test.py --season 2025 --show-diffs`
+  - Data confirmed: 54 players, 22 weeks, 5,619 pick rows
+- ✅ **README.md** — full setup guide (Supabase, Vercel, GitHub Secrets, local dev, job CLI reference, replay test instructions, rules quick-reference)
+- ✅ **`migrations/003_seed_example.sql`** — 5 sample players, 5 week-1 games, sample picks covering all bet validations; includes verification queries in comments
+- Noted: `api/__init__.py` was already created in Iteration 1
+
+### Decisions made
+- `replay_test.py` uses `team_name` (full name like "Seattle Seahawks") matching between line_log and pick_log — same as tuesday.R used `left_join` by team name; no ESPN IDs needed for historical validation
+- No-bet penalty in replay uses `no_bet_log.csv` snapshot value (matches what R code did); 2026 will use escalating week-by-week tracking in `penalties` table instead
+- Replay is read-only (no Supabase needed); runs standalone with just `pip install -r requirements.txt`
+
+### Remaining gaps before the app runs end-to-end
+
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 High | Supabase project + run migrations 001+002 | Manual (you do this) |
+| 🔴 High | Vercel project + env vars | Manual |
+| 🔴 High | API keys: Odds API, Resend | Manual |
+| 🔴 High | GitHub Secrets | Manual |
+| 🟡 Med | Actually run `replay_test.py` to verify 0 mismatches | Next iteration |
+| 🟡 Med | `jobs/` — add `__init__.py` so jobs are importable as a package | Quick fix |
+| 🟡 Med | Tailwind CSS build step (currently using CDN — fine for dev, should bundle for prod) | Month 3 |
+| 🟢 Low | Season-long points line chart on player profile page | Month 3 |
+| 🟢 Low | `.github/workflows/cron-poll-scores.yml` — auto-detect week from DB (currently hardcoded `|| 1`) | Before season |
+
+---
+
+## Iteration 3 — (next ~20 min)
 
 ### Planned
-- Fix `api/__init__.py` (missing, will break Vercel deployment)
-- Expand `README.md` with full local dev + Vercel deploy instructions
-- Add `migrations/003_seed_example.sql` with a sample season setup for testing
-- Begin replay test harness script that validates 2025 data against historical CSVs
+- Run replay_test.py against the actual 2025 data and report results
+- Add `jobs/__init__.py`
+- Add GitHub Actions workflow for running replay_test as a CI check
+- Wire up auto-week detection in poll_live_scores workflow
+- Create a `Makefile` with common dev commands
