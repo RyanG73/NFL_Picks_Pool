@@ -159,15 +159,17 @@ def main(week: int, season: int, dry_run: bool = False):
             print(f"  ⚠ No week_log row for {player['name']} week {week}")
             continue
 
-        # Gather all settlements and penalties for this week
+        # Gather settled picks for this week via picks_reveal_v (direct columns,
+        # no nested-resource filters which don't reliably filter parent rows).
         from api.lib.db import get_client
         settlements_raw = (
             get_client()
-            .table("settlements")
-            .select("result, net_profit, picks(player_id, game_id, games(week, season))")
-            .eq("picks.player_id", player["id"])
-            .eq("picks.games.week", week)
-            .eq("picks.games.season", season)
+            .table("picks_reveal_v")
+            .select("result, net_profit")
+            .eq("player_id", player["id"])
+            .eq("season", season)
+            .eq("week", week)
+            .not_.is_("result", "null")
             .execute()
             .data
         )
