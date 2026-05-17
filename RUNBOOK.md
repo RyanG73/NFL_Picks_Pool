@@ -63,6 +63,15 @@ the admin username/password (HTTP Basic auth at `/admin/`).
    ```
 4. If games were partially inserted, the job is idempotent — safe to rerun.
 
+## "Got an ESPN spread discrepancy email"
+
+The Wednesday job cross-checks Odds API spreads against ESPN's public scoreboard. If any game has a difference ≥ 1.5 points, an alert email goes to ADMIN_EMAIL.
+
+1. The email lists the game and both spread values.
+2. Go to `/admin/` → Games → find the game → "Correct Score" is not the right tool; instead edit the spread directly in Supabase if needed, or just note the discrepancy.
+3. The Odds API spread is used for betting and settlement — only override if you're confident the Odds API is wrong.
+4. This is a non-fatal warning; spreads were already inserted and the Wednesday email was sent.
+
 ---
 
 ## "ESPN returned a bad score" (wrong score in DB)
@@ -127,9 +136,10 @@ the admin username/password (HTTP Basic auth at `/admin/`).
 
 1. Let the Tuesday settlement job run for Week 22.
 2. Check final standings at `/week/22`.
-3. Export final balances from Supabase for prize payout tracking.
-4. Announce winners via admin broadcast.
-5. No cleanup needed — the DB retains all season data.
+3. **Go to `/admin/payout`** — prize ladder summary, payout table with Venmo links, P&L by player, 5-step checklist.
+4. Send each prize winner a Venmo payment using the links on the payout page.
+5. Announce winners via admin broadcast (use the quick-copy block on the payout page).
+6. No cleanup needed — the DB retains all season data.
 
 ---
 
