@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
     inputs:
       week:
-        description: 'Week number'
-        required: true
+        description: 'Week number (leave blank to auto-detect from DB)'
+        required: false
         type: number
 
 jobs:
@@ -32,7 +32,11 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
         run: |
+          WEEK_ARG=""
+          if [ -n "${{ inputs.week }}" ]; then
+            WEEK_ARG="--week ${{ inputs.week }}"
+          fi
           python jobs/poll_live_scores.py \
-            --week "${{ inputs.week || 1 }}" \
+            $WEEK_ARG \
             --season "$CURRENT_SEASON" \
             --once

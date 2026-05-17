@@ -11,7 +11,8 @@ Game windows:
 Designed to run as a short-lived process from GitHub Actions on a
 1-minute schedule, or as an infinite loop from a local machine.
 
-Usage: python jobs/poll_live_scores.py --season 2026 --week 1 [--dry-run] [--once]
+Usage: python jobs/poll_live_scores.py --season 2026 [--week 1] [--dry-run] [--once]
+       Omit --week to auto-detect the current active week from the DB.
 """
 import argparse
 import os
@@ -26,6 +27,25 @@ import httpx
 from api.lib import db
 
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+
+
+def detect_current_week(season: int) -> int:
+    """Return the lowest week with scheduled or in-progress games, else the latest week."""
+    client = db.get_client()
+    res = (
+        client.table("games")
+        .select("week")
+        .eq("season", season)
+        .in_("status", ["scheduled", "in_progress"])
+        .order("week")
+        .limit(1)
+        .execute()
+    )
+    if res.data:
+        return res.data[0]["week"]
+    # Fall back to the max week with any games (season over edge case)
+    res2 = client.table("games").select("week").eq("season", season).order("week", desc=True).limit(1).execute()
+    return res2.data[0]["week"] if res2.data else 1
 
 
 def fetch_espn_scores() -> dict[str, dict]:
@@ -74,8 +94,12 @@ def update_games(season: int, week: int, scores: dict, dry_run: bool):
             db.update_game(game["id"], **score)
 
 
-def main(season: int, week: int, dry_run: bool = False, once: bool = False):
-    print(f"[poll_live_scores] season={season} week={week}")
+def main(season: int, week: int | None = None, dry_run: bool = False, once: bool = False):
+    if week is None:
+        week = detect_current_week(season)
+        print(f"[poll_live_scores] auto-detected week={week} season={season}")
+    else:
+        print(f"[poll_live_scores] season={season} week={week}")
     while True:
         try:
             scores = fetch_espn_scores()
@@ -89,7 +113,7 @@ def main(season: int, week: int, dry_run: bool = False, once: bool = False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--week", type=int, required=True)
+    parser.add_argument("--week", type=int, default=None, help="Week number (auto-detects from DB if omitted)")
     parser.add_argument("--season", type=int, default=int(os.environ.get("CURRENT_SEASON", 2026)))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--once", action="store_true", help="Run once then exit (for cron)")

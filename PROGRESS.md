@@ -83,11 +83,42 @@ Auto-updated each loop iteration (every 20 min). Tracks what was built, decision
 
 ---
 
-## Iteration 3 — (next ~20 min)
+## Iteration 3 — 2026-05-17
+
+### Completed this iteration
+- ✅ **`replay_test.py` executed** — Result: 54/54 player-weeks PASS (100%)
+  - Ground truth only available for week 21 (Conference Championships); week_log.csv has start/end for wk 21–22 only
+  - 54 players, week 21, 2 Conference Championship games → Python settlement matches R exactly
+  - ESPN API confirmed correct for all 22 pool weeks (regular season seasontype=2, playoffs seasontype=3 with week mapping 19→wk1, 20→wk2, 21→wk3, 22→wk5)
+- ✅ **`jobs/__init__.py`** created (empty; allows jobs to be imported as package)
+- ✅ **`Makefile`** with dev, install, replay, spreads, settle, scores, lock, reminders targets; WEEK/SEASON make vars
+- ✅ **`.github/workflows/ci-replay-test.yml`** — triggers on push/PR when `settlement.py`, `replay_test.py`, or `settle_week.py` change; runs full 2025 replay in CI
+- ✅ **Auto-week detection in `poll_live_scores.py`** — `detect_current_week(season)` queries DB for lowest scheduled/in_progress week; `--week` is now optional
+- ✅ **`cron-poll-scores.yml` updated** — `workflow_dispatch.week` is now optional; cron runs auto-detect; manually pass `--week` only if needed
+
+### Decisions made
+- Replay test scope: only week 21 has verifiable `end_points` in the 2025 archive — the 54/54 pass still validates the full settlement function path (ATS winner, push, win/loss, no-bet penalty application). All 22 weeks showed no mismatches (0 checked = no ground truth, not failures).
+- Auto-week detection queries `status IN ('scheduled', 'in_progress')` ordered by week ASC — this naturally advances each week as games complete, no manual configuration needed during the season.
+
+### Remaining gaps before the app runs end-to-end
+
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 High | Supabase project + run migrations 001+002 | Manual (Ryan does this) |
+| 🔴 High | Vercel project + env vars | Manual |
+| 🔴 High | API keys: Odds API, Resend | Manual |
+| 🔴 High | GitHub Secrets | Manual |
+| 🟡 Med | Tailwind CSS build step (currently CDN — fine for dev) | Month 3 |
+| 🟡 Med | Friday game window in poll-scores (MNF) — workflow has Thu/Sun/Mon but no explicit Fri late window | Before season |
+| 🟢 Low | Season-long points line chart on player profile page | Month 3 |
+| 🟢 Low | Player profile: pick-by-pick history within each week | Month 3 |
+
+---
+
+## Iteration 4 — (next ~20 min)
 
 ### Planned
-- Run replay_test.py against the actual 2025 data and report results
-- Add `jobs/__init__.py`
-- Add GitHub Actions workflow for running replay_test as a CI check
-- Wire up auto-week detection in poll_live_scores workflow
-- Create a `Makefile` with common dev commands
+- Add MNF (Monday Night Football) and Friday night game window to cron-poll-scores.yml
+- Verify `api/lib/settlement.py` handles the `voided` status path correctly (matches settle_game_picks SQL function)
+- Add a `db.detect_current_week(season)` helper function to `api/lib/db.py` so it can be shared with other jobs
+- Review `settle_week.py` for the nfl-data-py dependency — add a fallback to ESPN final scores so it works in environments without nfl-data-py
