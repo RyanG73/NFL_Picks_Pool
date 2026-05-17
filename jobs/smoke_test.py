@@ -262,7 +262,6 @@ def apply_no_bet_penalty(players: list[dict], season: int, week: int):
             "amount": -5000,
             "consecutive_misses": 1,
             "waived": False,
-            "reason": "smoke test: no picks submitted",
         }).execute()
         verbose("Applied -5000 penalty to Carol")
 
