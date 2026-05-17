@@ -413,12 +413,27 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 - `make smoke WEEK=1 SEASON=2026` or `python jobs/smoke_test.py --verbose --skip-email`
 - RUNBOOK.md step 4 updated to reference smoke test before dry-run spreads
 
-### Remaining items (code essentially complete)
+### Loop Iteration — 2026-05-17 (A5 complete)
 
-| Item | Priority |
+**A5 — End-of-season payout admin page (committed 21a9b11)**
+- `api/lib/timewall.py` — `apply_prize_ladder(standings, prizes)`: ranks standings, splits ties evenly (T2/T3 display), annotates each row with `rank_display` and `prize`
+- `api/routes/public.py` — `_apply_prizes()` simplified to delegate to shared `apply_prize_ladder()`
+- `api/routes/admin.py` — new `GET /admin/payout` route: loads final standings, merges paid_buyin flags, computes prize ladder, passes to template
+- `api/templates/admin/payout.html` — prize ladder summary chips, payout table (rank/player/points/P&L/prize/paid/Venmo link), 5-step checklist, quick-copy block
+- `api/templates/admin/dashboard.html` — "Season Payout ↗" button added to quick actions bar
+
+**All plan phases are now complete.**
+
+---
+
+### Remaining items (all Ryan's manual work — code is done)
+
+| Item | Notes |
 |---|---|
-| A5: End-of-season payout admin page | Low — deferred until first season ends |
-| Supabase project setup | Ryan's manual step |
-| Vercel + env vars + API keys | Ryan's manual step |
-| Add 2026 players | Ryan — after infra is up |
-| Run `make smoke` against staging | Ryan — target: within 2 weeks |
+| Register domain | ~$12, point at Vercel after deploy |
+| Supabase project | Create, run migrations 001+002+004 (skip 003 in prod) |
+| Vercel + env vars + API keys | See `.env.example` for required vars |
+| Get API keys | The Odds API (free 500 req/mo), Resend (free 3k/mo) |
+| GitHub Secrets | Same vars as Vercel + `CURRENT_SEASON=2026` variable |
+| Add 2026 players | Admin dashboard, one at a time |
+| Run `make smoke` against staging | Target: within 2 weeks of infra being up |
