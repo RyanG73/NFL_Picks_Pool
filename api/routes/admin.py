@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from api.lib import db
 from api.lib.auth import require_admin
 from api.lib.email_send import send_magic_link, send_broadcast
+from api.lib.timewall import compute_prize_ladder, apply_prize_ladder
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -177,6 +178,38 @@ async def waive_penalty(
     db.waive_penalty(penalty_id, reason)
     db.log_action("waive_penalty", {"penalty_id": penalty_id, "reason": reason})
     return RedirectResponse("/admin/", status_code=303)
+
+
+# ── Season payout ──────────────────────────────────────────────────────────
+
+@router.get("/payout", response_class=HTMLResponse)
+async def payout_page(request: Request, _=Depends(require_admin)):
+    """End-of-season prize payout summary for Ryan to reference when sending Venmo payments."""
+    players_all = db.get_all_players(active_only=False)
+    paid_count = sum(1 for p in players_all if p.get("paid_buyin"))
+    pot = paid_count * 50
+
+    # Use final standings from the last settled week
+    final_week = db.detect_current_week(SEASON)
+    standings = db.get_standings(SEASON, final_week)
+
+    # Merge paid_buyin flag into standings for prize computation
+    paid_by_id = {p["id"]: p.get("paid_buyin", False) for p in players_all}
+    for s in standings:
+        s["paid_buyin"] = paid_by_id.get(s["player_id"], False)
+
+    prizes = compute_prize_ladder(max(paid_count, 1))
+    standings = apply_prize_ladder(standings, prizes)
+
+    return templates.TemplateResponse("admin/payout.html", {
+        "request": request,
+        "standings": standings,
+        "prizes": prizes,
+        "pot": pot,
+        "paid_count": paid_count,
+        "final_week": final_week,
+        "season": SEASON,
+    })
 
 
 # ── Broadcast ──────────────────────────────────────────────────────────────

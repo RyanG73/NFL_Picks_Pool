@@ -74,6 +74,53 @@ def compute_prize_ladder(paid_count: int) -> list[str]:
     return [f"${p:,}" for p in prizes]
 
 
+def apply_prize_ladder(standings: list[dict], prizes: list[str]) -> list[dict]:
+    """
+    Annotate standings rows with prize amounts and rank display strings.
+
+    Handles ties: N players with equal current_points share
+    sum(prizes[rank-1:rank-1+N]) / N split evenly.
+
+    Adds to each row:
+      - 'rank_display': '1', 'T2', 'T2', '4' ...
+      - 'prize': '$550' or split like '$312' or None (eliminated / out of prizes)
+    """
+    if not standings:
+        return standings
+
+    result: list[dict] = []
+    i = 0
+    rank = 1
+    while i < len(standings):
+        pts = standings[i]["current_points"]
+        j = i + 1
+        while j < len(standings) and standings[j]["current_points"] == pts:
+            j += 1
+        n_tied = j - i
+        tied_slice = standings[i:j]
+
+        prize_str: str | None = None
+        if not tied_slice[0].get("is_eliminated"):
+            prize_indices = range(rank - 1, min(rank - 1 + n_tied, len(prizes)))
+            raw_prizes = [int(prizes[k].replace("$", "").replace(",", "")) for k in prize_indices]
+            if raw_prizes:
+                split = sum(raw_prizes) / n_tied
+                prize_str = f"${split:,.0f}" if split == int(split) else f"${split:,.2f}"
+
+        rank_display = f"T{rank}" if n_tied > 1 else str(rank)
+        for row in tied_slice:
+            result.append({
+                **row,
+                "rank_display": rank_display,
+                "prize": prize_str if not row.get("is_eliminated") else None,
+            })
+
+        rank += n_tied
+        i = j
+
+    return result
+
+
 def _parse_utc(iso: str) -> datetime:
     dt = datetime.fromisoformat(iso)
     if dt.tzinfo is None:

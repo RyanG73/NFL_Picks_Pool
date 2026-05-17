@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from api.lib import db
-from api.lib.timewall import saturday_noon_et, compute_prize_ladder
+from api.lib.timewall import saturday_noon_et, compute_prize_ladder, apply_prize_ladder
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -119,52 +119,7 @@ def _compute_prizes(standings: list[dict]) -> list[str]:
 
 
 def _apply_prizes(standings: list[dict], prizes: list[str]) -> list[dict]:
-    """
-    Annotate standings with prize amounts, handling ties.
-    Tied players at rank R share sum(prizes[R-1:R-1+N]) / N split equally.
-    Adds 'prize' (str | None) and 'rank_display' ('1', 'T2', etc.) to each row.
-    """
-    if not standings:
-        return standings
-
-    result = []
-    i = 0
-    rank = 1
-    while i < len(standings):
-        # Find run of tied players (same current_points)
-        pts = standings[i]["current_points"]
-        j = i + 1
-        while j < len(standings) and standings[j]["current_points"] == pts:
-            j += 1
-        n_tied = j - i
-        tied_slice = standings[i:j]
-
-        # Compute shared prize
-        prize_indices = range(rank - 1, min(rank - 1 + n_tied, len(prizes)))
-        raw_prizes = [
-            int(prizes[k].replace("$", "").replace(",", ""))
-            for k in prize_indices
-            if not tied_slice[0].get("is_eliminated")
-        ]
-        if raw_prizes:
-            split = sum(raw_prizes) / n_tied
-            prize_str = f"${split:,.0f}" if split == int(split) else f"${split:,.2f}"
-        else:
-            prize_str = None
-
-        rank_display = f"T{rank}" if n_tied > 1 else str(rank)
-
-        for row in tied_slice:
-            result.append({
-                **row,
-                "rank_display": rank_display,
-                "prize": prize_str if not row.get("is_eliminated") else None,
-            })
-
-        rank += n_tied
-        i = j
-
-    return result
+    return apply_prize_ladder(standings, prizes)
 
 
 # ── Leaderboard (home) ─────────────────────────────────────────────────────

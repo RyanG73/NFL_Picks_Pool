@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Season Payout — Admin{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+  <div>
+    <a href="/admin/" class="text-sm text-gray-400 hover:text-gray-600">← Admin</a>
+    <h1 class="text-2xl font-bold mt-1">{{ season }} Season Payout</h1>
+    <p class="text-sm text-gray-500">Final standings through Week {{ final_week }} · {{ paid_count }} paid players · ${{ pot | int }} pot</p>
+  </div>
+  <div class="text-right">
+    <div class="text-3xl font-bold text-green-700">${{ pot | int }}</div>
+    <div class="text-xs text-gray-500">Total prize pool</div>
+  </div>
+</div>
+
+<!-- Prize ladder summary -->
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+  <h2 class="font-semibold text-blue-900 mb-2 text-sm uppercase tracking-wide">Prize Ladder (top {{ prizes | length }} players)</h2>
+  <div class="flex flex-wrap gap-2">
+    {% for p in prizes %}
+    <span class="bg-white border border-blue-200 text-blue-800 text-sm font-bold px-3 py-1 rounded-full">
+      {{ loop.index }}. {{ p }}
+    </span>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Payout table -->
+<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+    <h2 class="font-semibold text-gray-800">Payout Summary</h2>
+    <span class="text-xs text-gray-400">Copy Venmo amounts from the Prize column</span>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left text-gray-600 w-10">#</th>
+        <th class="px-4 py-3 text-left text-gray-600">Player</th>
+        <th class="px-4 py-3 text-right text-gray-600">Final Points</th>
+        <th class="px-4 py-3 text-right text-gray-600">Season P&L</th>
+        <th class="px-4 py-3 text-right text-gray-600">Prize</th>
+        <th class="px-4 py-3 text-right text-gray-600">Paid In?</th>
+        <th class="px-4 py-3 text-left text-gray-600">Venmo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in standings %}
+      <tr class="border-b border-gray-100 last:border-0 {% if row.is_eliminated %}opacity-40{% endif %} {% if row.prize %}bg-green-50{% endif %}">
+        <td class="px-4 py-3 text-gray-400 font-mono">{{ row.rank_display | default(loop.index | string) }}</td>
+        <td class="px-4 py-3 font-medium">
+          <a href="/player/{{ row.player_id }}" class="hover:underline">{{ row.name }}</a>
+          {% if row.is_eliminated %}<span class="ml-2 text-xs text-red-500">(eliminated)</span>{% endif %}
+        </td>
+        <td class="px-4 py-3 text-right font-bold tabular-nums">{{ "{:,}".format(row.current_points) }}</td>
+        <td class="px-4 py-3 text-right tabular-nums font-semibold
+            {% set pnl = row.current_points - 25000 %}
+            {% if pnl > 0 %}text-green-600{% elif pnl < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+          {% set pnl = row.current_points - 25000 %}
+          {% if pnl > 0 %}+{% endif %}{{ "{:,}".format(pnl) }}
+        </td>
+        <td class="px-4 py-3 text-right">
+          {% if row.prize %}
+          <span class="bg-green-100 text-green-800 text-sm font-bold px-3 py-1 rounded-full">{{ row.prize }}</span>
+          {% else %}
+          <span class="text-gray-300 text-xs">—</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-right">
+          {% if row.paid_buyin %}
+          <span class="text-green-600 text-xs font-semibold">✓ Paid</span>
+          {% else %}
+          <span class="text-red-500 text-xs font-semibold">⚠ Unpaid</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          {% if row.prize %}
+          <a href="https://venmo.com/{{ row.name | urlencode }}?txn=pay&amount={{ row.prize | replace('$','') | replace(',','') }}&note={{ season }}+NFL+Picks+Pool+Prize"
+             target="_blank"
+             class="text-blue-600 hover:underline text-xs font-semibold">
+            Venmo ↗
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Payout checklist -->
+<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+  <h2 class="font-semibold text-yellow-900 mb-3">Payout Checklist</h2>
+  <ul class="text-sm text-yellow-800 space-y-2">
+    <li>☐ Confirm all paid-in players show "✓ Paid" above (toggle in <a href="/admin/" class="underline">Admin → Players</a>)</li>
+    <li>☐ Verify Week {{ final_week }} settlement ran (check standings haven't changed since Tuesday)</li>
+    <li>☐ Send each prize winner a Venmo payment using the links above</li>
+    <li>☐ Broadcast a final email to all players with thanks + final standings link</li>
+    <li>☐ Archive this season's data (export from Supabase if desired)</li>
+  </ul>
+</div>
+
+<!-- Quick copy: prize amounts -->
+<div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+  <h2 class="font-semibold text-gray-700 mb-2 text-sm">Quick Copy — Prize Payments</h2>
+  <div class="font-mono text-xs text-gray-600 space-y-1">
+    {% for row in standings %}
+    {% if row.prize %}
+    <div class="flex gap-6">
+      <span class="w-32 truncate">{{ row.name }}</span>
+      <span class="font-bold text-green-700">{{ row.prize }}</span>
+      <span class="text-gray-400">rank {{ row.rank_display }}</span>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
