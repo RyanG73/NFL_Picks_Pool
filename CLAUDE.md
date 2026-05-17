@@ -19,15 +19,18 @@ Fully automated NFL picks pool web app (40-50 players, $50 buy-in, 25k starting 
 - The CSV data is used by `jobs/replay_test.py` to validate settlement logic; CI skips gracefully if not present
 
 ## Key Design Decisions
-- Per-game kickoff locks (not Saturday lock-all) — rule change from the 2025 R-based system
+- **Saturday-noon hard lock**: `effective_lock_at = min(game.kickoff_at, saturday_noon_ET)` — Thursday games lock at kickoff; all other games lock at Saturday noon ET. Enforced in `api/lib/timewall.py` (`is_locked()`, `saturday_noon_et()`), `api/routes/picks.py`, and `migrations/002_functions.sql`.
 - Picks form: 3 slots max, must submit all at once; stale picks (changed games) are deleted on resubmit
 - settlement.py is pure logic; settle_week.py does all DB writes; idempotent re-runs are safe
 - No-bet penalty: -5000 × consecutive misses, skips eliminated players (0 pts)
+- Dynamic prize ladder: top 15% of paid players, `compute_prize_ladder(paid_count)` in `timewall.py`
 - ESPN week mapping: pool weeks 1-18 = seasontype 2, week 19→wk1, 20→wk2, 21→wk3, 22→wk5 (Super Bowl)
+- PostgREST embedded filters (`.eq("games.season", x)`) use LEFT JOIN — never filter parent rows. Always use game-ID prefetch + `.in_("game_id", ids)` pattern instead.
 
 ## Running Locally
 ```bash
 make install   # pip install -r requirements.txt
 make dev       # uvicorn api.main:app --reload
 make replay    # validate 2025 settlement (needs Historical_Results/ data)
+make smoke WEEK=1 SEASON=2026  # end-to-end pipeline test (needs live Supabase)
 ```
