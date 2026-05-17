@@ -1,5 +1,6 @@
 import os
 import secrets
+from datetime import datetime, timezone
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -229,7 +230,7 @@ async def send_broadcast_msg(
         "subject": subject,
         "body_html": body_html,
         "banner_text": banner_text or None,
-        "sent_at": "now()",
+        "sent_at": datetime.now(timezone.utc).isoformat(),
     }).execute()
     db.log_action("broadcast", {"subject": subject})
     return RedirectResponse("/admin/", status_code=303)
