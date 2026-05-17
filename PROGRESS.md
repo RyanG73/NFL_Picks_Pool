@@ -320,6 +320,34 @@ Bugs fixed across all iterations (14 total):
 | 🟢 Low | Player profile: pick-by-pick history within each week | Month 3 |
 
 ### Next coding priorities (if loop continues)
-- Season-long points line chart on player profile (uses `week_log` data, add Chart.js to base.html)
-- Player profile: pick-by-pick history within each week (uses `picks_reveal_v` view)
+- Season-long points line chart on player profile (uses `week_log` data, add Chart.js to base.html) ✅ DONE this iteration
+- Player profile: pick-by-pick history within each week (uses `picks_reveal_v` view) ✅ DONE this iteration
 - Tailwind CSS build step (replace CDN with bundled output via `tailwindcss` CLI)
+
+---
+
+## Iteration 10 (continued) — 2026-05-17
+
+### Also completed this iteration
+- ✅ **Season-long points line chart** on player profile:
+  - Chart.js 4.4 loaded via CDN only on player profile pages (via `{% block extra_scripts %}`)
+  - X axis: "Start" + "Wk N" for each settled week; Y axis: points formatted as "25k"
+  - NFL navy blue line (#013369) with subtle fill; only renders when ≥2 settled weeks exist
+  - `base.html` extended with `{% block extra_scripts %}{% endblock %}` slot
+- ✅ **Pick-by-pick history** on player profile:
+  - Collapsible week accordions (HTML `<details>/<summary>`) — no JS needed
+  - Each pick shows: team picked, spread, opponent, amount wagered, result badge (WIN/LOSS/PUSH/VOID/LIVE/Pending)
+  - Weekly net P&L shown in accordion header when non-zero
+  - `db.get_player_picks_history(player_id, season)` added to db.py — queries `picks_reveal_v` ordered by week + kickoff
+  - `picks_by_week` dict passed to template from player_profile route
+
+### Month 3 features now complete
+- ✅ Live leaderboard during games (real-time ATS implied standings)
+- ✅ Season-long points line chart on player profile
+- ✅ Pick-by-pick history within each week on player profile
+
+### Only remaining coding item
+- Tailwind CSS build step (replace CDN with bundled `tailwindcss` CLI output) — low priority, CDN is fine for launch
+
+### All code complete — ready for infrastructure setup
+The app is feature-complete for the 2026 season. Only manual infrastructure setup remains before Week 1.
