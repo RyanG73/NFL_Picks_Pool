@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       week:
-        description: 'Week number'
-        required: true
+        description: 'Week number (leave blank to auto-detect from DB)'
+        required: false
         type: number
 
 jobs:
@@ -31,6 +31,14 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
         run: |
+          WEEK="${{ inputs.week }}"
+          if [ -z "$WEEK" ]; then
+            WEEK=$(python -c "
+import os, sys; sys.path.insert(0,'.')
+from api.lib import db
+print(db.detect_current_week(int(os.environ.get('CURRENT_SEASON', 2026))))
+")
+          fi
           python jobs/detect_cancellations.py \
-            --week "${{ inputs.week || 1 }}" \
+            --week "$WEEK" \
             --season "$CURRENT_SEASON"

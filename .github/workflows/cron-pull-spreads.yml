@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
     inputs:
       week:
-        description: 'Week number (1-22)'
-        required: true
+        description: 'Week number (1-22; leave blank to auto-detect from DB)'
+        required: false
         type: number
       dry_run:
         description: 'Dry run (no writes, no emails)'
@@ -37,16 +37,13 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
         run: |
-          WEEK="${{ inputs.week || '' }}"
+          WEEK="${{ inputs.week }}"
           DRY_RUN="${{ inputs.dry_run == 'true' && '--dry-run' || '' }}"
-          # Auto-detect week from current date if not provided
           if [ -z "$WEEK" ]; then
             WEEK=$(python -c "
-          import nfl_data_py as nfl, pandas as pd, datetime as dt
-          sched = nfl.import_schedules([int('$CURRENT_SEASON')])
-          today = dt.date.today()
-          future = sched[pd.to_datetime(sched['gameday']).dt.date >= today]
-          print(future['week'].min() if len(future) else 1)
-          ")
+import os, sys; sys.path.insert(0,'.')
+from api.lib import db
+print(db.detect_current_week(int(os.environ.get('CURRENT_SEASON', 2026))))
+")
           fi
           python jobs/pull_spreads.py --week "$WEEK" --season "$CURRENT_SEASON" $DRY_RUN

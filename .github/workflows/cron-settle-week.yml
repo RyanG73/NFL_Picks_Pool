@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       week:
-        description: 'Week number to settle'
-        required: true
+        description: 'Week number to settle (leave blank to auto-detect from DB)'
+        required: false
         type: number
       dry_run:
         description: 'Dry run (no writes)'
@@ -31,7 +31,15 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
         run: |
+          WEEK="${{ inputs.week }}"
+          if [ -z "$WEEK" ]; then
+            WEEK=$(python -c "
+import os, sys; sys.path.insert(0,'.')
+from api.lib import db
+print(db.detect_current_week(int(os.environ.get('CURRENT_SEASON', 2026))))
+")
+          fi
           python jobs/settle_week.py \
-            --week "${{ inputs.week }}" \
+            --week "$WEEK" \
             --season "$CURRENT_SEASON" \
             ${{ inputs.dry_run == 'true' && '--dry-run' || '' }}
