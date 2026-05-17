@@ -123,10 +123,8 @@
           {% endfor %}
           <!-- Net for the week -->
           <td class="px-4 py-3 text-right font-bold tabular-nums
-            {% set net = pp.picks | sum(attribute='net_profit') %}
-            {% if net > 0 %}text-green-600{% elif net < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
-            {% set net = pp.picks | sum(attribute='net_profit') %}
-            {% if net > 0 %}+{% endif %}{{ "{:,}".format(net) if net else '—' }}
+            {% if pp.total_net_profit > 0 %}text-green-600{% elif pp.total_net_profit < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+            {% if pp.total_net_profit > 0 %}+{% endif %}{{ "{:,}".format(pp.total_net_profit) if pp.total_net_profit else '—' }}
           </td>
         </tr>
         {% endfor %}
