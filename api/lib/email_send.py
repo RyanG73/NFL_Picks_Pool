@@ -57,6 +57,8 @@ def send_reminder(player: dict, week: int) -> None:
 
 def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
     """Saturday after lock: picks are live."""
+    if not players:
+        return
     app_url = os.environ.get("APP_URL", "")
     html = _render(
         "email/picks_reveal.html",
@@ -100,6 +102,8 @@ def send_admin_alert(to: str, subject: str, body: str) -> None:
 
 def send_broadcast(players: list[dict], subject: str, body_html: str) -> None:
     """Mass-message all players."""
+    if not players:
+        return
     to_addrs = [p["email"] for p in players]
     resend.Emails.send({
         "from": FROM,

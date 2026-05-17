@@ -19,14 +19,20 @@ def main(week: int, season: int, dry_run: bool = False):
 
     players = db.get_all_players()
 
-    # Get all players who have submitted at least one pick this week
+    # Get picks for this week: query game IDs first, then filter picks by game_id.
+    # (Filtering on embedded relationship columns in PostgREST only filters the
+    # embedded resource, not the parent row — using .in_() on game_id is correct.)
+    games_this_week = {g["id"] for g in db.get_games(season, week)}
+    if not games_this_week:
+        print(f"  No games found for season={season} week={week} — skipping reminders")
+        return
+
     from api.lib.db import get_client
     picks_this_week = (
         get_client()
         .table("picks")
-        .select("player_id, game_id, games(season, week)")
-        .eq("games.season", season)
-        .eq("games.week", week)
+        .select("player_id")
+        .in_("game_id", list(games_this_week))
         .execute()
         .data
     )
