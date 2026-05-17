@@ -189,9 +189,9 @@ Auto-updated each loop iteration (every 20 min). Tracks what was built, decision
 - Admin `_current_week()` uses `detect_current_week()` — same as public/picks; admin primarily works on the current active week, and detect correctly returns the next week after settlement (it has scheduled games)
 - `pull_spreads.py` week_log seeding is belt-and-suspenders: `settle_week.py` already seeds week+1 start_points during settlement; pull_spreads overwrites with same value. Idempotent and safe.
 
-### Summary: all known bugs fixed
+### Summary: known bugs fixed so far
 
-After 6 iterations, the codebase has no known logic bugs. Key fixes made during this loop:
+Key fixes made during Iterations 1–6:
 1. ✅ Stale picks accumulation (>3 picks by changing game selections)
 2. ✅ Wrong `_current_week()` in all 3 routes (max-week vs active-week)
 3. ✅ Dead `import nfl_data_py` in pull_spreads.py
@@ -201,6 +201,37 @@ After 6 iterations, the codebase has no known logic bugs. Key fixes made during 
 7. ✅ settle_week.py fails without nfl-data-py (added ESPN fallback)
 8. ✅ detect_current_week duplicated (consolidated to db.py)
 9. ✅ Historical data gitignore (player PII)
+
+---
+
+## Iteration 7 — 2026-05-17
+
+### Completed this iteration
+- ✅ **CRITICAL: ESPN ID mismatch bug fixed** — `poll_live_scores.py` and `detect_cancellations.py` were matching games by ESPN event ID, but `espn_event_id` in the DB stores The Odds API's own ID (a different system). Live scores and postponement detection would **never have matched any games** as originally written. Fixed by matching on `(home_team, away_team)` display name pairs — stable across both APIs.
+- ✅ **`migrations/004_games_team_unique.sql`** — adds `unique(season, week, home_team, away_team)` (natural game identity); documents `espn_event_id` column as storing The Odds API ID (not ESPN's)
+- ✅ **`spreads.py` spread logic verified** — `_extract_spread()` correctly handles home-favored (negative line) and away-favored cases; pick-em fallback to `(0.0, home, away)` correct
+- ✅ **`send_reminders.py` verified** — correctly finds players with no picks for current week; active-only filter; dry-run support; no issues found
+- ✅ **`detect_cancellations.py` log_action fix** — removed reference to undefined `eid` variable in audit log
+
+### Decisions made
+- `espn_event_id` remains the Odds API ID for upsert deduplication (prevents duplicate game rows when pull_spreads reruns). The column name is misleading but renaming requires more disruptive changes; migration 004 adds a SQL comment explaining the actual contents.
+- Team name matching is robust for NFL (teams don't move mid-season, and ESPN/Odds API both use canonical "City Team" format like "Kansas City Chiefs"). This approach avoids any ID translation layer.
+
+### Running bug count total (all sessions)
+1. ✅ Stale picks accumulation  2. ✅ Wrong _current_week() x3  3. ✅ Dead nfl-data-py import  4. ✅ No eliminated-player check  5. ✅ Dead variable in lock_and_reveal  6. ✅ MNF window missing  7. ✅ nfl-data-py fallback  8. ✅ detect_current_week duplication  9. ✅ Historical PII in git  **10. ✅ ESPN ID mismatch (critical — scores would never update)**
+
+### Remaining gaps
+
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 High | Supabase project + run migrations 001–004 | Manual (Ryan does this) |
+| 🔴 High | Vercel project + env vars | Manual |
+| 🔴 High | API keys: Odds API, Resend | Manual |
+| 🔴 High | GitHub Secrets | Manual |
+| 🟡 Med | `standings_v` during live games shows start_points (no real-time ATS) | Month 3 |
+| 🟡 Med | Tailwind CSS build step (currently CDN) | Month 3 |
+| 🟢 Low | Season-long points line chart on player profile | Month 3 |
+| 🟢 Low | Player profile: pick-by-pick history | Month 3 |
 
 ### Remaining gaps before the app runs end-to-end
 
