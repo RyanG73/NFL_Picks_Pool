@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from api.lib import db
 from api.lib.auth import validate_magic_token
+from api.lib.timewall import saturday_noon_et, is_locked as game_is_locked
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -38,11 +39,13 @@ def _validate_picks(
     amounts: list[int],
     games_by_id: dict,
     available: int,
+    sat_noon: datetime,
 ) -> list[str]:
     """Return a list of validation error messages (empty = valid)."""
     errors = []
     total = 0
     used_games = set()
+    now = datetime.now(timezone.utc)
     for gid, side, amount in zip(game_ids, sides, amounts):
         if not gid:
             continue
@@ -57,8 +60,8 @@ def _validate_picks(
         if game["status"] != "scheduled":
             errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} is already locked or voided.")
             continue
-        if datetime.now(timezone.utc) >= datetime.fromisoformat(game["kickoff_at"]):
-            errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} has already kicked off.")
+        if game_is_locked(game, now, sat_noon):
+            errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} is locked.")
             continue
         if side not in ("FAVORITE", "UNDERDOG"):
             errors.append("Invalid pick side.")
@@ -83,11 +86,15 @@ async def picks_form(request: Request, token: str):
     player = validate_magic_token(token)
     week = _current_week()
     games = db.get_games(SEASON, week)
+    now = datetime.now(timezone.utc)
+    sat_noon = saturday_noon_et(games)
+    # Annotate each game with its effective lock status for the template
+    for g in games:
+        g["is_locked"] = game_is_locked(g, now, sat_noon)
     existing_picks = {p["game_id"]: p for p in db.get_player_picks(player["id"], SEASON, week)}
     available = _available_points(player["id"], week)
     already_used = sum(p["pick_amount"] for p in existing_picks.values())
     banner = db.get_active_banner()
-    # Ordered slot assignment: sorted by game_id for stability, padded to 3 with None
     picks_list = sorted(existing_picks.values(), key=lambda p: p["game_id"])
     slot_picks = (picks_list + [None, None, None])[:3]
 
@@ -103,6 +110,7 @@ async def picks_form(request: Request, token: str):
         "committed_points": already_used,
         "remaining_points": available - already_used,
         "banner": banner,
+        "sat_noon_passed": now >= sat_noon,
         "errors": [],
         "success": False,
     })
@@ -116,6 +124,10 @@ async def submit_picks(
     player = validate_magic_token(token)
     week = _current_week()
     games = db.get_games(SEASON, week)
+    now = datetime.now(timezone.utc)
+    sat_noon = saturday_noon_et(games)
+    for g in games:
+        g["is_locked"] = game_is_locked(g, now, sat_noon)
     games_by_id = {g["id"]: g for g in games}
     available = _available_points(player["id"], week)
     banner = db.get_active_banner()
@@ -133,7 +145,7 @@ async def submit_picks(
         except ValueError:
             amounts.append(0)
 
-    errors = _validate_picks(game_ids, sides, amounts, games_by_id, available)
+    errors = _validate_picks(game_ids, sides, amounts, games_by_id, available, sat_noon)
 
     existing_picks = {p["game_id"]: p for p in db.get_player_picks(player["id"], SEASON, week)}
 
@@ -153,6 +165,7 @@ async def submit_picks(
             "committed_points": already_used,
             "remaining_points": available - already_used,
             "banner": banner,
+            "sat_noon_passed": now >= sat_noon,
             "errors": errors,
             "success": False,
         })
@@ -195,6 +208,7 @@ async def submit_picks(
         "committed_points": already_used,
         "remaining_points": available - already_used,
         "banner": banner,
+        "sat_noon_passed": now >= sat_noon,
         "errors": [],
         "success": True,
     })

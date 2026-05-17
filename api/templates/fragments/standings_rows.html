@@ -1,4 +1,3 @@
-{% set prizes = ['$900','$700','$500','$250','$200','$100','$50'] %}
 {% if is_live %}
 <tr class="bg-red-50 border-b border-red-100">
   <td colspan="5" class="px-4 py-1.5 text-center text-xs font-semibold text-red-600 tracking-wide">
@@ -7,16 +6,16 @@
 </tr>
 {% endif %}
 {% for row in standings %}
-{% set rank = loop.index %}
 <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors
     {% if row.is_eliminated %}eliminated{% endif %}">
 
   <!-- Rank -->
   <td class="px-4 py-3 text-gray-400 font-mono text-sm">
-    {% if rank <= 3 %}
-      {{ ['🥇','🥈','🥉'][rank-1] }}
+    {% set rank_num = loop.index %}
+    {% if not row.is_eliminated and rank_num <= 3 %}
+      {{ ['🥇','🥈','🥉'][rank_num-1] }}
     {% else %}
-      {{ rank }}
+      {{ row.rank_display | default(rank_num | string) }}
     {% endif %}
   </td>
 
@@ -48,11 +47,11 @@
     {% endif %}
   </td>
 
-  <!-- Prize -->
+  <!-- Prize (computed server-side from paid player count) -->
   <td class="px-4 py-3 text-right hidden sm:table-cell">
-    {% if not row.is_eliminated and rank <= prizes | length %}
+    {% if row.prize %}
       <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">
-        {{ prizes[rank-1] }}
+        {{ row.prize }}
       </span>
     {% endif %}
   </td>

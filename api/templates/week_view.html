@@ -3,7 +3,7 @@
 
 {% block content %}
 <h1 class="text-2xl font-bold mb-1">Week {{ week }} Picks</h1>
-<p class="text-sm text-gray-500 mb-6">{{ season }} Season · All picks shown after Saturday 11:59am lock</p>
+<p class="text-sm text-gray-500 mb-6">{{ season }} Season · Picks reveal Saturday at noon ET</p>
 
 <!-- Picks-by-team heatmap (mirrors saturday.R picks_by_team chart) -->
 <section class="mb-8">
@@ -55,6 +55,8 @@
     {% endfor %}
   </div>
 </section>
+
+{% if picks_revealed %}
 
 <!-- Weekly hero callout: biggest winner / biggest loser -->
 {% if players_picks %}
@@ -134,4 +136,15 @@
     </table>
   </div>
 </section>
+
+{% else %}
+
+<!-- Picks not yet revealed -->
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+  <div class="text-3xl mb-2">🔒</div>
+  <h2 class="text-lg font-semibold text-blue-900 mb-1">Picks reveal Saturday at noon ET</h2>
+  <p class="text-sm text-blue-700">Individual picks are hidden until the submission deadline passes.</p>
+</div>
+
+{% endif %}
 {% endblock %}

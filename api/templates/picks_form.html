@@ -31,7 +31,7 @@
 <!-- Success / error messages -->
 {% if success %}
 <div class="bg-green-50 border border-green-300 rounded-xl p-4 mb-6 text-green-800 font-medium">
-  ✅ Picks saved! You can update them any time before each game kicks off.
+  ✅ Picks saved! Sunday/Monday picks lock Saturday at noon ET; Thursday picks lock at kickoff.
   <a href="/" class="underline ml-2">View standings →</a>
 </div>
 {% endif %}
@@ -61,7 +61,7 @@
               onchange="updateSideButtons({{ slot }})">
         <option value="">— Choose a game —</option>
         {% for g in games %}
-        {% set locked = g.status != 'scheduled' %}
+        {% set locked = g.status != 'scheduled' or g.is_locked %}
         <option value="{{ g.id }}"
                 data-fav="{{ g.favorite_team }}"
                 data-dog="{{ g.underdog_team }}"
@@ -116,7 +116,11 @@
     Save My Picks
   </button>
   <p class="text-xs text-center text-gray-400 mt-2">
-    Picks lock when each game kicks off · You can edit until then
+    {% if sat_noon_passed %}
+      Picks are locked for games kicking off today · Thursday picks lock at kickoff
+    {% else %}
+      Sunday/Monday picks lock Saturday at noon ET · Thursday picks lock at kickoff
+    {% endif %}
   </p>
 </form>
 

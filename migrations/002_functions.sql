@@ -6,7 +6,12 @@
 -- Locks any pick whose game kickoff has passed and whose locked_at is still NULL.
 -- Idempotent: safe to call repeatedly.
 
-create or replace function lock_kicked_off_picks(as_of timestamptz default now())
+-- sat_noon: if provided and as_of >= sat_noon, ALL remaining unlocked picks lock
+-- at min(game.kickoff_at, sat_noon) — the "Saturday noon hard lock" rule.
+create or replace function lock_kicked_off_picks(
+  as_of    timestamptz default now(),
+  sat_noon timestamptz default null
+)
 returns integer
 language plpgsql
 as $$
@@ -14,12 +19,19 @@ declare
   updated_count integer;
 begin
   update picks
-  set locked_at = games.kickoff_at
+  set locked_at = case
+    when sat_noon is not null and as_of >= sat_noon
+      then least(games.kickoff_at, sat_noon)
+    else games.kickoff_at
+  end
   from games
   where picks.game_id = games.id
     and picks.locked_at is null
-    and games.kickoff_at <= as_of
-    and games.status != 'voided';
+    and games.status != 'voided'
+    and (
+      games.kickoff_at <= as_of
+      or (sat_noon is not null and as_of >= sat_noon)
+    );
 
   get diagnostics updated_count = row_count;
   return updated_count;

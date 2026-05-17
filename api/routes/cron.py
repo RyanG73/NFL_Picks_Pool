@@ -3,8 +3,10 @@ Short Vercel Cron endpoints (must complete within 10s).
 Heavy jobs (settlement, spreads, emails) run in GitHub Actions.
 """
 import os
+from datetime import datetime, timezone
 from fastapi import APIRouter, Header, HTTPException
 from api.lib import db
+from api.lib.timewall import saturday_noon_et
 
 router = APIRouter()
 
@@ -18,15 +20,21 @@ def _verify(authorization: str | None):
 
 @router.get("/lock-and-reveal")
 async def lock_picks(authorization: str | None = Header(default=None)):
-    """Saturday 11:59am — lock all picks whose games have kicked off."""
+    """Runs every minute during game windows — locks picks at kickoff or Saturday noon."""
     _verify(authorization)
     season = int(os.environ.get("CURRENT_SEASON", 2026))
     from api.lib.db import get_client
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
-    # Lock any pick whose game has kicked off and isn't locked yet
-    get_client().rpc("lock_kicked_off_picks", {"as_of": now}).execute()
-    return {"status": "ok"}
+    now = datetime.now(timezone.utc)
+    week = db.detect_current_week(season)
+    games = db.get_games(season, week)
+    sat_noon = saturday_noon_et(games)
+
+    params: dict = {"as_of": now.isoformat()}
+    if now >= sat_noon:
+        params["sat_noon"] = sat_noon.isoformat()
+
+    get_client().rpc("lock_kicked_off_picks", params).execute()
+    return {"status": "ok", "sat_noon_passed": now >= sat_noon}
 
 
 @router.get("/detect-cancellations")
