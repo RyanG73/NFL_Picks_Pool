@@ -77,13 +77,15 @@ def detect_current_week(season: int) -> int:
 # ── Picks ──────────────────────────────────────────────────────────────────
 
 def get_player_picks(player_id: str, season: int, week: int) -> list[dict]:
+    game_ids = [g["id"] for g in get_games(season, week)]
+    if not game_ids:
+        return []
     return (
         get_client()
         .table("picks")
         .select("*, games(*)")
         .eq("player_id", player_id)
-        .eq("games.season", season)
-        .eq("games.week", week)
+        .in_("game_id", game_ids)
         .execute()
         .data
     )
