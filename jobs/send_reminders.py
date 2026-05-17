@@ -44,7 +44,7 @@ def main(week: int, season: int, dry_run: bool = False):
     for player in missing:
         print(f"  → Reminding {player['name']} ({player['email']})")
         if not dry_run:
-            email_send.send_reminder(player, week)
+            email_send.send_reminder(player, week, season)
 
     if dry_run:
         print("  (dry-run: no emails sent)")

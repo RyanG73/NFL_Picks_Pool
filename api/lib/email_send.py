@@ -39,13 +39,17 @@ def send_weekly_spreads(players: list[dict], week: int, season: int, games: list
         })
 
 
-def send_reminder(player: dict, week: int) -> None:
+def send_reminder(player: dict, week: int, season: int = 0) -> None:
     """Friday night: you haven't picked yet."""
     app_url = os.environ.get("APP_URL", "")
+    if not season:
+        season = int(os.environ.get("CURRENT_SEASON", 2026))
     html = _render(
         "email/reminder.html",
         player=player,
         week=week,
+        season=season,
+        app_url=app_url,
         picks_url=f"{app_url}/p/{player['magic_token']}",
     )
     resend.Emails.send({
@@ -78,12 +82,15 @@ def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
     })
 
 
-def send_magic_link(player: dict) -> None:
+def send_magic_link(player: dict, season: int = 0) -> None:
     """Send (or resend) a player's magic link."""
     app_url = os.environ.get("APP_URL", "")
+    if not season:
+        season = int(os.environ.get("CURRENT_SEASON", 2026))
     html = _render(
         "email/magic_link.html",
         player=player,
+        season=season,
         picks_url=f"{app_url}/p/{player['magic_token']}",
         app_url=app_url,
     )
