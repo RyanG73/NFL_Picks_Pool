@@ -351,3 +351,42 @@ Bugs fixed across all iterations (14 total):
 
 ### All code complete — ready for infrastructure setup
 The app is feature-complete for the 2026 season. Only manual infrastructure setup remains before Week 1.
+
+---
+
+## Post-Loop Q&A Session — 2026-05-17
+
+### 20 questions asked and answered; key rule clarifications
+
+1. **Saturday-noon hard lock** — Sunday/Monday picks lock at Saturday noon ET (not per-game kickoff). Thursday games still lock at kickoff. `lock_at = min(kickoff_at, saturday_noon_ET)`. This is a rule change from the prior per-game-kickoff design.
+2. **Dynamic prizes** — top 15% of paid players share the pot with a $25-rounded arithmetic ladder. Replaces hardcoded amounts.
+3. **Pre-lock pick privacy** — individual picks hidden until Saturday noon (only player + admin can see before that). Game heatmap (aggregate totals) always visible.
+4. **Ties** — split prize evenly, display as T2/T3.
+5. **Roster locks at Week 1** — no mid-season joins.
+6. **Eliminated permanently** — current behavior confirmed.
+7. **2026 rulebook** — new deliverable: `Rules/2026_NFL_PICKS_POOL_RULES.md` (15 sections).
+8. **Dry-run ASAP** — Ryan wants full end-to-end dry-run in next 2 weeks.
+9. **Top worry**: tech reliability of live scores + emails.
+10. **Backup spread source** — ESPN cross-check when Odds API and ESPN disagree ≥1.5 pts. (Phase A4 — still to implement)
+
+### Code changes committed (21st commit)
+
+- ✅ `api/lib/timewall.py` (new) — `saturday_noon_et()`, `compute_prize_ladder()`, `is_locked()`, `effective_lock_at()`, `_parse_utc()`. DST-aware via `zoneinfo`.
+- ✅ `migrations/002_functions.sql` — `lock_kicked_off_picks()` now accepts optional `sat_noon` param; locks picks at `least(kickoff_at, sat_noon)` when past noon.
+- ✅ `api/routes/cron.py` — computes `sat_noon` per week, passes to RPC when past noon.
+- ✅ `api/routes/picks.py` — annotates each game with `is_locked`; GET/POST both enforce `min(kickoff, sat_noon)` lock; form shows correct lock-timing message.
+- ✅ `api/routes/public.py` — `_compute_prizes()`, `_apply_prizes()` for dynamic prize ladder + tie splitting; `week_view` gates picks table behind `picks_revealed` bool.
+- ✅ `api/templates/picks_form.html` — uses `game.is_locked` flag; updated success/footer messages.
+- ✅ `api/templates/fragments/standings_rows.html` — uses `row.prize` and `row.rank_display` from route.
+- ✅ `api/templates/week_view.html` — picks table hidden before Saturday noon; locked placeholder shown.
+- ✅ `Rules/2026_NFL_PICKS_POOL_RULES.md` — full 2026 rulebook (all 15 sections).
+- ✅ `.gitignore` — loosened `Rules/` → `Rules/*.pdf` so rulebook MD can be tracked.
+
+### Still to implement (from plan)
+
+| Phase | Item | Priority |
+|---|---|---|
+| A4 | ESPN spread cross-check in `pull_spreads.py` | Medium |
+| A5 | End-of-season prize splitter + admin payout page | Low |
+| D | `jobs/smoke_test.py` end-to-end dry-run script | High (next 2 weeks) |
+| C | Supabase, Vercel, API keys, GitHub Secrets | Ryan's manual work |
