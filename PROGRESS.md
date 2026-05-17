@@ -435,6 +435,7 @@ The app is feature-complete for the 2026 season. Only manual infrastructure setu
 - **Bug fix**: `base.html` nav "This Week" link used `{{ current_week }}` but no route passed that variable (all pass `week`). Always linked to `/week/1`. Fixed to use `{{ week | default(1) }}` and added `week` to `player_profile` and `payout_page` template contexts.
 - **Bug fix**: `send_reminders.py` used PostgREST embedded filter `.eq("games.season", ...)` which filters the embedded resource not parent rows — could incorrectly mark players who picked ANY week as "submitted." Fixed to use game ID prefetch + `.in_("game_id", ...)` pattern (same as `lock_and_reveal.py`). Also guarded against no-games-found case.
 - **Bug fix**: `email_send.send_picks_reveal()` and `send_broadcast()` would crash with IndexError on `to_addrs[0]` if players list is empty. Added early return guards.
+- **CRITICAL BUG FIX**: `settle_week.py` week_log balance computation queried settlements using 3-level nested PostgREST embedded filters (`settlements → picks → games`) which may not filter parent rows — could return all settlements for a player across all weeks, producing completely wrong end-of-week balances. Fixed by using `picks_reveal_v` view with direct `player_id`, `season`, `week` column filters.
 
 ---
 
