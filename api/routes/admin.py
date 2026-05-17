@@ -13,9 +13,7 @@ SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 
 
 def _current_week() -> int:
-    from api.lib.db import get_client
-    res = get_client().table("games").select("week").eq("season", SEASON).order("week", desc=True).limit(1).execute()
-    return res.data[0]["week"] if res.data else 1
+    return db.detect_current_week(SEASON)
 
 
 # ── Dashboard ──────────────────────────────────────────────────────────────
