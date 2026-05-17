@@ -27,12 +27,14 @@ async def admin_home(request: Request, _=Depends(require_admin)):
     standings = db.get_standings(SEASON, week)
     games = db.get_games(SEASON, week)
     audit = db.get_client().table("admin_audit_log").select("*").order("performed_at", desc=True).limit(30).execute().data
+    penalties = db.get_client().table("penalties").select("*, players(name)").eq("season", SEASON).order("applied_at", desc=True).execute().data
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
         "players": players,
         "standings": standings,
         "games": games,
         "audit": audit,
+        "penalties": penalties,
         "week": week,
         "season": SEASON,
     })

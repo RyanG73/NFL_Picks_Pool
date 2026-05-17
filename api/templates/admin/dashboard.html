@@ -167,6 +167,57 @@
   </div>
 </section>
 
+<!-- Penalties -->
+<section class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+  <div class="px-4 py-3 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-800">Penalties ({{ season }} Season)</h2>
+  </div>
+  {% if penalties %}
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-2 text-left text-gray-600">Player</th>
+        <th class="px-4 py-2 text-center text-gray-600">Week</th>
+        <th class="px-4 py-2 text-right text-gray-600">Amount</th>
+        <th class="px-4 py-2 text-center text-gray-600">Misses</th>
+        <th class="px-4 py-2 text-center text-gray-600">Status</th>
+        <th class="px-4 py-2 text-center text-gray-600">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in penalties %}
+      <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+        <td class="px-4 py-2 font-medium">{{ p.players.name }}</td>
+        <td class="px-4 py-2 text-center text-gray-500">{{ p.week }}</td>
+        <td class="px-4 py-2 text-right font-mono text-red-600">{{ "{:,}".format(p.amount) }}</td>
+        <td class="px-4 py-2 text-center text-gray-500">{{ p.consecutive_misses }}</td>
+        <td class="px-4 py-2 text-center">
+          {% if p.waived %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">Waived</span>
+          {% else %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Active</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-center">
+          {% if not p.waived %}
+          <form method="post" action="/admin/penalty/{{ p.id }}/waive" class="flex justify-center gap-1 items-center">
+            <input type="text" name="reason" required placeholder="Waive reason"
+                   class="border border-gray-300 rounded px-1 py-0.5 text-xs w-28">
+            <button type="submit" class="text-xs text-orange-600 hover:underline">Waive</button>
+          </form>
+          {% else %}
+          <span class="text-xs text-gray-400">{{ p.waived_reason or '' }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="px-4 py-3 text-sm text-gray-400">No penalties this season.</p>
+  {% endif %}
+</section>
+
 <!-- Audit log -->
 <section class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
   <div class="px-4 py-3 border-b border-gray-100">
