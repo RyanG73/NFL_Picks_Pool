@@ -87,6 +87,9 @@ async def picks_form(request: Request, token: str):
     available = _available_points(player["id"], week)
     already_used = sum(p["pick_amount"] for p in existing_picks.values())
     banner = db.get_active_banner()
+    # Ordered slot assignment: sorted by game_id for stability, padded to 3 with None
+    picks_list = sorted(existing_picks.values(), key=lambda p: p["game_id"])
+    slot_picks = (picks_list + [None, None, None])[:3]
 
     return templates.TemplateResponse("picks_form.html", {
         "request": request,
@@ -95,6 +98,7 @@ async def picks_form(request: Request, token: str):
         "season": SEASON,
         "games": games,
         "existing_picks": existing_picks,
+        "slot_picks": slot_picks,
         "available_points": available,
         "committed_points": already_used,
         "remaining_points": available - already_used,
@@ -135,6 +139,8 @@ async def submit_picks(
 
     if errors:
         already_used = sum(p["pick_amount"] for p in existing_picks.values())
+        picks_list = sorted(existing_picks.values(), key=lambda p: p["game_id"])
+        slot_picks = (picks_list + [None, None, None])[:3]
         return templates.TemplateResponse("picks_form.html", {
             "request": request,
             "player": player,
@@ -142,6 +148,7 @@ async def submit_picks(
             "season": SEASON,
             "games": games,
             "existing_picks": existing_picks,
+            "slot_picks": slot_picks,
             "available_points": available,
             "committed_points": already_used,
             "remaining_points": available - already_used,
@@ -173,6 +180,8 @@ async def submit_picks(
     # Reload picks after save
     existing_picks = {p["game_id"]: p for p in db.get_player_picks(player["id"], SEASON, week)}
     already_used = sum(p["pick_amount"] for p in existing_picks.values())
+    picks_list = sorted(existing_picks.values(), key=lambda p: p["game_id"])
+    slot_picks = (picks_list + [None, None, None])[:3]
 
     return templates.TemplateResponse("picks_form.html", {
         "request": request,
@@ -181,6 +190,7 @@ async def submit_picks(
         "season": SEASON,
         "games": games,
         "existing_picks": existing_picks,
+        "slot_picks": slot_picks,
         "available_points": available,
         "committed_points": already_used,
         "remaining_points": available - already_used,
