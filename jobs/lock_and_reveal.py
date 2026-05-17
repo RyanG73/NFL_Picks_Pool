@@ -24,16 +24,7 @@ def main(week: int, season: int, dry_run: bool = False):
 
     players = db.get_all_players()
 
-    # Find who has no team1-slot pick at all (i.e. didn't pick any game this week)
     from api.lib.db import get_client
-    picks_this_week = (
-        get_client()
-        .table("picks")
-        .select("player_id")
-        .execute()
-        .data
-    )
-    # Filter to picks for games in this season+week
     games_this_week = {g["id"] for g in db.get_games(season, week)}
     all_picks = (
         get_client()
@@ -45,10 +36,26 @@ def main(week: int, season: int, dry_run: bool = False):
     )
     submitted_ids = {p["player_id"] for p in all_picks}
 
+    # Load week_log to check starting balances (eliminated players skip penalty)
+    week_log_rows = (
+        get_client()
+        .table("week_log")
+        .select("player_id, start_points")
+        .eq("season", season)
+        .eq("week", week)
+        .execute()
+        .data
+    )
+    start_by_player = {r["player_id"]: r["start_points"] for r in week_log_rows}
+
     for player in players:
         if not player["is_active"]:
             continue
         if player["id"] in submitted_ids:
+            continue
+        # Skip eliminated players — can't go below 0
+        if start_by_player.get(player["id"], 25_000) <= 0:
+            print(f"  Skipping {player['name']} (eliminated — 0 points)")
             continue
 
         # This player missed the week. Get consecutive miss count.
