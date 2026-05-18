@@ -126,3 +126,14 @@ def _parse_utc(iso: str) -> datetime:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
+
+
+def kickoff_time_et(utc_iso: str) -> str:
+    """Jinja2 filter: convert UTC ISO timestamp to '1:00 PM ET' for display."""
+    try:
+        et = _parse_utc(utc_iso).astimezone(_ET)
+        hour = et.hour % 12 or 12
+        ampm = "AM" if et.hour < 12 else "PM"
+        return f"{hour}:{et.minute:02d} {ampm} ET"
+    except Exception:
+        return utc_iso[11:16]

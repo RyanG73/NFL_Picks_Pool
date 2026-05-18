@@ -14,8 +14,7 @@
     {% for g in games %}
     <div class="min-w-[160px] bg-white rounded-lg border border-gray-200 shadow-sm p-3 text-xs">
       <div class="font-semibold text-gray-700 mb-1">
-        {{ g.kickoff_at | replace('T', ' ') | truncate(10, True, '') }} ·
-        {{ g.kickoff_at[11:16] }} ET
+        {{ g.kickoff_at[:10] }} · {{ g.kickoff_at | kickoff_et }}
       </div>
       <div class="flex justify-between items-center">
         <span class="font-bold">{{ g.favorite_team | truncate(10, True, '') }}</span>

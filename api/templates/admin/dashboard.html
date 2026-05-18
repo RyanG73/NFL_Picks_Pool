@@ -142,7 +142,7 @@
         <span class="font-semibold">{{ g.favorite_team }}</span>
         <span class="text-gray-400 mx-1">-{{ g.spread }}</span>
         <span>{{ g.underdog_team }}</span>
-        <span class="ml-2 text-xs text-gray-400">{{ g.kickoff_at[:16] | replace('T',' ') }} ET</span>
+        <span class="ml-2 text-xs text-gray-400">{{ g.kickoff_at[:10] }} · {{ g.kickoff_at | kickoff_et }}</span>
         <span class="ml-2 px-2 py-0.5 rounded text-xs font-bold
           {% if g.status == 'final' %}bg-gray-100 text-gray-600
           {% elif g.status == 'voided' %}bg-red-100 text-red-700

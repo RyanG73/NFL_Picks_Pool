@@ -7,11 +7,12 @@ from fastapi.templating import Jinja2Templates
 from api.lib import db
 from api.lib.auth import require_admin
 from api.lib.email_send import send_magic_link, send_broadcast
-from api.lib.timewall import compute_prize_ladder, apply_prize_ladder
+from api.lib.timewall import compute_prize_ladder, apply_prize_ladder, kickoff_time_et
 from api.lib.spreads import fetch_espn_spreads, cross_check_spreads
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
+templates.env.filters["kickoff_et"] = kickoff_time_et
 SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 
 

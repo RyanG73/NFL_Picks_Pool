@@ -5,12 +5,13 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from api.lib import db
-from api.lib.timewall import saturday_noon_et, compute_prize_ladder, apply_prize_ladder
+from api.lib.timewall import saturday_noon_et, compute_prize_ladder, apply_prize_ladder, kickoff_time_et
 
 _RULES_PATH = pathlib.Path(__file__).parent.parent.parent / "Rules" / "2026_NFL_PICKS_POOL_RULES.md"
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
+templates.env.filters["kickoff_et"] = kickoff_time_et
 
 SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 
