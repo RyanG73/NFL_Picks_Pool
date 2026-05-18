@@ -922,6 +922,30 @@ All code paths that consume `picks_reveal_v` are correct. The full codebase audi
 
 ---
 
+## Loop Iteration — 2026-05-17 (thirteenth)
+
+### README accuracy fixes committed (81 commits total)
+
+No new bugs found. Two documentation inaccuracies corrected and committed as `4531977`:
+
+**README Saturday cron time corrected**
+- Weekly timeline showed "11:59am" for lock-and-reveal. The actual cron `59 17 * * 6` fires at 12:59pm EST / 1:59pm EDT — always after the noon deadline, never before it.
+- Corrected to "~1pm ET (fires after noon lock)" to reflect the real schedule without over-specifying the DST-dependent exact minute.
+
+**README game polling days corrected**
+- Weekly timeline showed "Thu/Sun/Mon" for ESPN score polling. Wild Card (week 19) and Divisional (week 20) rounds include Saturday games. `cron-poll-scores.yml` already has Saturday windows added in iteration 7 (Bug 7 fix).
+- Corrected to "Thu/Sat/Sun/Mon" with note "(Sat = playoff weeks)".
+
+### Dead dependency removed (committed as `e9e94bc`, prior iteration)
+
+`nfl-data-py==0.3.3` removed from `requirements.txt`. The only consumer (`_load_via_nfl_data_py()` in `settle_week.py`) raises `NotImplementedError` immediately — the package was never actually imported. Removal drops pandas/numpy/pyarrow transitive dependencies (~100MB reduction in Vercel Lambda bundle size).
+
+### Audit status: definitively complete
+
+All 44+ source files have been read and audited across 13 loop iterations. Running total: **45 bugs fixed, 81 commits**. No known issues remain.
+
+---
+
 ## LOOP COMPLETE — Infrastructure Checklist (Ryan's manual work)
 
 All code tasks from the plan are done. Only manual setup remains before Week 1 kickoff (Sept 2026).
