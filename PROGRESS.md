@@ -1524,3 +1524,46 @@ Final deep read of remaining unverified templates and routes:
 **`api/lib/db.py`** (full read) — `get_client()` cached with `@lru_cache(maxsize=1)` (correct serverless pattern); `upsert_week_log(end_points=None)` skips the field (idempotent start-of-week seeding); `delete_unlocked_picks_not_in(keep=[])` deletes all unlocked picks when no games selected — safe because picks route validator requires ≥1 pick; `get_active_banner` filters `banner_text IS NOT NULL AND sent_at IS NOT NULL` — correct ✅
 
 ### Running total: 73 bugs fixed, 122 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-seventh)
+
+### No bugs found — deep audit of two most critical runtime files
+
+**`api/routes/picks.py`** (pick validation + Saturday-noon lock enforcement)
+
+- `_available_points()`: reads `start_points` from `week_log`; defaults to 25,000 — correct for new players not yet seeded.
+- `_validate_picks()`: silently skips voided/non-scheduled/locked games; enforces min 500, increments of 500, and total ≤ `effective_available` — all correct.
+- GET handler: annotates `g["is_locked"]` per game using `game_is_locked(g, sat_noon)`; builds `slot_picks = (picks_list + [None, None, None])[:3]` for exactly 3 form slots — correct.
+- POST handler: `locked_amount = sum(p["pick_amount"] for p in existing_picks.values() if p.get("locked_at"))` then `effective_available = available - locked_amount` — correctly handles the Thursday-game-already-locked case (those bets are already committed, shouldn't count against remaining budget for new picks).
+- After validation: `delete_unlocked_picks_not_in(player_id, submitted_game_ids)` preserves locked picks while clearing stale unlocked ones — correct.
+- Locked game skip in upsert: `if game and (game["status"] == "voided" or game["status"] != "scheduled" or game_is_locked(...)): continue` — server-enforces what the form's disabled options communicate to the user.
+- HTML `disabled+selected` option behavior: disabled options are not submitted in form data (spec-correct), so the server never receives game IDs for locked slots. The server's "skip locked game in upsert" guard is the safety net. No bug.
+- Minor UX edge case (not a bug): if all 3 games become locked between form load and submit, the validator sees 0 valid games and returns "You must select at least one game." Existing locked picks are safe (preserved by `delete_unlocked_picks_not_in`).
+
+**`jobs/settle_week.py`** (settlement + balance propagation)
+
+- `_load_via_nfl_data_py()`: intentionally raises `NotImplementedError` (abbreviation vs. display name format mismatch) — ESPN fallback is the real path. The dead code is safely unreachable.
+- ESPN fallback: filters `status.type.name == "STATUS_FINAL"`; keys scores by `(home_displayName, away_displayName)` — matches `games` table `home_team`/`away_team` which stores display names from Odds API.
+- Score assignment to favorite/underdog correctly handles home-favored vs away-favored cases:
+  ```python
+  favorite_score = score["home_score"] if game["home_team"] == game["favorite_team"] else score["away_score"]
+  underdog_score = score["home_score"] if game["home_team"] == game["underdog_team"] else score["away_score"]
+  ```
+- Settlement is idempotent: checks for existing settlement record before writing — safe to re-run after partial failure.
+- Week log advancement: `if week < 22: db.upsert_week_log(player_id, season, week + 1, end_points)` — correct Week 22 guard prevents seeding a non-existent week 23.
+- Pool week → ESPN `(seasontype, week)` map: `{**{w: (2, w) for w in range(1, 19)}, 19: (3, 1), 20: (3, 2), 21: (3, 3), 22: (3, 5)}` matches CLAUDE.md spec — correct.
+
+### Audit complete — all files verified
+
+Every file in the codebase has now been audited across iterations 1–37:
+- All 7 database migrations ✅
+- All 15 Jinja2 templates (web + email) ✅
+- All FastAPI routes (public, picks, admin, cron) ✅
+- All library modules (db, auth, settlement, spreads, timewall, email_send) ✅
+- All 8 job scripts ✅
+- All 7 GitHub Actions workflows ✅
+- All config files (vercel.json, requirements.txt, Makefile, .env.example) ✅
+
+### Running total: 73 bugs fixed, 123 commits
