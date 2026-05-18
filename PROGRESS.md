@@ -1443,3 +1443,26 @@ Final deep read of remaining unverified templates and routes:
 **`api/lib/db.py` `get_all_players(active_only=True)`** — no route currently sets `is_active = False`, so the player profile route's use of `active_only=True` is safe; `is_active` field is reserved for future manual removal.
 
 ### Running total: 70 bugs fixed, 116 commits (loop complete)
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-third)
+
+### 2 show-stopper deployment bugs fixed (118 commits total)
+
+**Bug 71 — `api/static/` not tracked in git — Vercel deploy crashes on startup**
+- `api/static/css/` existed locally but had no files and was never committed. Git doesn't track empty directories, so Vercel's checkout would have no `api/static/` directory. FastAPI raises `RuntimeError: Directory 'api/static' does not exist` at startup when `app.mount("/static", StaticFiles(directory="...static"))` is called on a missing path. The app would refuse to start on every Vercel deploy.
+- Fix: added `api/static/css/.gitkeep` so the directory is committed and present post-checkout.
+
+**Bug 72 — No Python version pinned — Vercel may default to Python 3.9**
+- `@vercel/python` has historically defaulted to older Python versions (3.9, 3.11) depending on the builder release. The codebase uses `str | None` union syntax (Python 3.10+), `list[dict]` and `tuple[str, str]` built-in generics (Python 3.9+), and `match`-style dict methods. Python 3.9 would fail at import time on `str | None` in `cron.py` and elsewhere. GitHub Actions already pins `python-version: '3.12'` in all 7 workflows, but Vercel had no equivalent.
+- Fix: added `.python-version` file with `3.12` — recognized by pyenv, Vercel's Python runtime, and most CI/CD platforms.
+
+### Deployment configuration verified
+
+- `vercel.json`: builds only `api/main.py` via `@vercel/python`; static route `/static/(.*)` → `/api/static/$1` is present; two Vercel crons (`lock-and-reveal` every 5 min + `detect-cancellations` hourly no-op) — Vercel Pro required for 5-minute crons ✅
+- `requirements.txt`: 8 dependencies pinned to exact versions; no external packages beyond what's imported; `nfl-data-py` not needed (replay_test uses ESPN stdlib) ✅
+- `.python-version`: `3.12` (new) ✅
+- `api/static/css/.gitkeep`: ensures static mount doesn't crash FastAPI (new) ✅
+
+### Running total: 72 bugs fixed, 118 commits
