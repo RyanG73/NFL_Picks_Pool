@@ -946,6 +946,25 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (sixteenth)
+
+### 1 bug fixed (87 commits total)
+
+**Bug 48 — `smoke_test.py`: partial-seed rows orphaned on failure**
+- `_seeded_player_ids` and `_seeded_game_ids` were declared at module level but never populated. `seed_players()` and `seed_games()` insert rows one at a time in a loop; if any individual insert raises (e.g., unique constraint conflict on team names, DB connection drop), the function raises before returning and `main()` sees the local `players`/`games` list as still empty `[]`. Teardown used only those caller-passed lists — any rows inserted before the failure were permanently orphaned in the staging DB.
+- Fix: append to `_seeded_player_ids` / `_seeded_game_ids` immediately after each successful insert in both seed functions. Teardown merges module-level trackers with caller-passed lists using `set()` union, so cleanup is complete regardless of where the failure occurred.
+- Also confirmed: all other smoke_test logic (settlement math, verify_standings scoping, Carol penalty check) is correct.
+
+### Also verified clean this iteration
+- `Makefile`: all targets correct (`dev`, `install`, `replay`, `smoke`, `spreads`, `lock`, `settle`, `scores`, `help`)
+- `.gitignore`: `.env`, `Historical_Results/`, `Historical_Code/`, `Rules/*.pdf/docx`, `/__*.html`, `.claude/` all correctly excluded; `Rules/2026_NFL_PICKS_POOL_RULES.md` (.md) NOT excluded — correct, it should be committed
+- `smoke_test.py` teardown: now cleaned up correctly even on partial seed failures
+- All DB cascade paths verified: games→picks→settlements (game delete), players→picks+penalties+week_log (player delete)
+
+### Running total: 48 bugs fixed, 87 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (fifteenth)
 
 ### 2 doc bugs fixed (85 commits total)
