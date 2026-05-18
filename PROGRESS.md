@@ -1510,3 +1510,17 @@ Final deep read of remaining unverified templates and routes:
 **`admin/dashboard.html`** — `standings | selectattr('player_id', 'eq', player.id) | first` correctly uses Jinja2 `undefined` falsy fallback for new players; `players(name)` embedded PostgREST select (not filter — correct use); `{{ ... | length * 50 }}` parsed as `(length) * 50` in Jinja2 ✅
 
 ### Running total: 73 bugs fixed, 121 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-sixth)
+
+### No bugs found — final infrastructure file audit
+
+**`cron-poll-scores.yml`** — 8 schedule entries covering all game windows (Thu 18:00-04:00 UTC, Sat playoffs 16:00-05:00, Sun 17:00-04:00, Mon 00:00-04:00, Fri 17:00-23:00). `--once` flag limits each run to a single ESPN poll. Estimated runtime: ~1,200–1,350 min/month during regular season — within GitHub free-tier 2,000 min/month for private repos. Off-season runs exit early (no active games). ✅
+
+**`api/lib/auth.py`** — HTTP Basic via `HTTPBasicCredentials`; `secrets.compare_digest` prevents timing attacks; 401 response includes `WWW-Authenticate: Basic` header (triggers browser auth dialog); `validate_magic_token` raises 403 for deactivated players ✅
+
+**`api/lib/db.py`** (full read) — `get_client()` cached with `@lru_cache(maxsize=1)` (correct serverless pattern); `upsert_week_log(end_points=None)` skips the field (idempotent start-of-week seeding); `delete_unlocked_picks_not_in(keep=[])` deletes all unlocked picks when no games selected — safe because picks route validator requires ≥1 pick; `get_active_banner` filters `banner_text IS NOT NULL AND sent_at IS NOT NULL` — correct ✅
+
+### Running total: 73 bugs fixed, 122 commits
