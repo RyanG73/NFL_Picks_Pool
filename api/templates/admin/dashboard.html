@@ -152,6 +152,13 @@
         </span>
       </div>
       <div class="flex gap-2">
+        <!-- Correct spread -->
+        <form method="post" action="/admin/game/{{ g.id }}/correct-spread" class="flex gap-1 items-center text-xs">
+          <span class="text-gray-400">sprd</span>
+          <input type="number" name="spread" step="0.5" min="0.5" value="{{ g.spread }}"
+                 class="w-14 border border-gray-300 rounded px-1 py-0.5">
+          <button type="submit" class="text-yellow-600 hover:underline">Fix Spread</button>
+        </form>
         <!-- Correct score -->
         <form method="post" action="/admin/game/{{ g.id }}/correct-score" class="flex gap-1 items-center text-xs">
           <input type="number" name="home_score" value="{{ g.home_score or '' }}" placeholder="H"

@@ -68,7 +68,7 @@ the admin username/password (HTTP Basic auth at `/admin/`).
 The Wednesday job cross-checks Odds API spreads against ESPN's public scoreboard. If any game has a difference ≥ 1.5 points, an alert email goes to ADMIN_EMAIL.
 
 1. The email lists the game and both spread values.
-2. Go to `/admin/` → Games → find the game → "Correct Score" is not the right tool; instead edit the spread directly in Supabase if needed, or just note the discrepancy.
+2. Go to `/admin/` → Games → find the game → use **Fix Spread** (the yellow button) to correct the spread.
 3. The Odds API spread is used for betting and settlement — only override if you're confident the Odds API is wrong.
 4. This is a non-fatal warning; spreads were already inserted and the Wednesday email was sent.
 

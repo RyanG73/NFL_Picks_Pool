@@ -177,6 +177,17 @@ async def correct_score(
     return RedirectResponse("/admin/", status_code=303)
 
 
+@router.post("/game/{game_id}/correct-spread", response_class=RedirectResponse)
+async def correct_spread(
+    game_id: str,
+    spread: float = Form(...),
+    _=Depends(require_admin),
+):
+    db.update_game(game_id, spread=spread)
+    db.log_action("correct_spread", {"game_id": game_id, "spread": spread})
+    return RedirectResponse("/admin/", status_code=303)
+
+
 # ── Penalty waive ──────────────────────────────────────────────────────────
 
 @router.post("/penalty/{penalty_id}/waive", response_class=RedirectResponse)
