@@ -1868,3 +1868,30 @@ Line 34: `{% if standings %}` correctly hides the "Last Week's Standings" sectio
 - `g.status as game_status`, `case pk.pick_side when 'FAVORITE' then g.favorite_team else g.underdog_team end as pick_team_name` — confirmed correct for both the live standings route and the week_view page. ✅
 
 ### Running total: 75 bugs fixed, 132 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-seventh)
+
+### No bugs found — rules route, all 4 SQL functions, CDN dependency audit
+
+**`rules_page` route + `rules.html` template** ✅
+
+- `_RULES_PATH = Path(__file__).parent.parent.parent / "Rules" / "2026_NFL_PICKS_POOL_RULES.md"` — three `.parent` hops from `api/routes/public.py` land at project root, then `Rules/...`. Correct on both local dev and Vercel (Lambda filesystem root = project root). ✅
+- `FileNotFoundError` fallback: "Rules not found." — graceful. ✅
+- Template renders Markdown client-side via `marked.js` (`cdn.jsdelivr.net/npm/marked/marked.min.js`, latest tag). `raw_md | tojson` safely escapes the Markdown string for JavaScript injection. `<noscript><pre>` fallback shows raw text without JS. ✅
+- Minor: `marked.js` URL has no version pin (uses `latest`). Not a production blocker but worth noting for future stability.
+
+**`migrations/002_functions.sql` — all 4 functions** ✅
+
+1. **`lock_kicked_off_picks(as_of, sat_noon)`**: The Saturday-noon hard lock logic — `set locked_at = least(kickoff_at, sat_noon)` when sat_noon passed; `set locked_at = kickoff_at` otherwise. Condition `(kickoff_at <= as_of OR (sat_noon IS NOT NULL AND as_of >= sat_noon))` correctly gates on either trigger. Idempotent (`locked_at IS NULL` filter). Excludes voided games. ✅
+
+2. **`settle_game_picks(game_id, home_score, away_score)`**: ATS logic mirrors `settlement.py` — `diff > spread → FAVORITE`, `diff < spread → UNDERDOG`, `diff == spread → push`. Home-vs-away favorite handling correct. Upserts settlements idempotently (`on conflict (pick_id) do update`). Handles voided game by voiding all picks. ✅
+
+3. **`player_current_points(player_id, season)`**: Returns `start_points` from latest week_log row, defaults 25,000. Unused by Python code — Python picks route queries week_log directly. Available as utility via Supabase dashboard. Not a bug.
+
+4. **`active_banner()`**: Returns latest broadcast banner_text. Unused by Python code — `db.get_active_banner()` queries `broadcasts` table directly via PostgREST. Not a bug.
+
+Note: `week_committed_points(player_id, season, week)` SQL function also exists but is unused; Python picks route computes available balance in Python. All four functions are correct implementations even if only `lock_kicked_off_picks` and `settle_game_picks` are called from application code.
+
+### Running total: 75 bugs fixed, 133 commits
