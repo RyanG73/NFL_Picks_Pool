@@ -1648,3 +1648,32 @@ All 7 smoke test steps are implemented: seed players/games → submit picks (Ali
 | D | End-to-end dry-run | ✅ `jobs/smoke_test.py` — 7-step pipeline test |
 
 ### Running total: 73 bugs fixed, 125 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fortieth)
+
+### No bugs found — replay test confirmed, detect_cancellations verified
+
+**Replay test: 54/54 player-weeks pass (100%)** ✅
+
+`python jobs/replay_test.py` ran against the Historical_Results/ CSVs. All 22 weeks (18 regular + 4 playoff) produced exact matches against the original R output. No regressions from any of the 73 bug fixes.
+
+**`detect_current_week(season)` in `db.py:59`** ✅
+
+Logic: finds the lowest week with `status IN ('scheduled', 'in_progress')` → falls back to max week → falls back to 1 if no games. Every cron workflow uses this for auto-detection when no `--week` is passed. Key correctness properties:
+- Mid-week (after settlement, before new spreads): all games "final", no new games yet → returns max week (e.g., 17). If `settle_week` re-runs with that week, its idempotency guard sees the existing settlement and does nothing harmlessly.
+- Between-season: no games at all → returns 1 (safe default).
+- Multi-game-day week: some games "final" on Monday, remaining "scheduled" → returns current week (correct — picks lock is still in effect for remaining games).
+
+**`jobs/detect_cancellations.py`** ✅
+
+Never audited in prior iterations — verified clean now:
+- ESPN status coverage: checks `status.type.name` against `{STATUS_POSTPONED, STATUS_CANCELED, STATUS_CANCELLED}` AND `shortDetail` against `{POST, CANC, POSTPONED, PPD, CANCELED, CANCELLED}` — handles all known ESPN postponement codes.
+- Matches by `(home_displayName, away_displayName)` not ESPN event ID — necessary because `espn_event_id` in DB stores The Odds API's ID (different system).
+- Skips already-handled games (`status in ("voided", "postponed")`) — idempotent.
+- Flags as "postponed" (not "voided") — requires human admin confirmation before picks are voided. No auto-void.
+- Admin alert email references `/admin/` (correct URL) not `/admin/games` (non-existent).
+- `--dry-run` gates both DB write and email correctly.
+
+### Running total: 73 bugs fixed, 126 commits
