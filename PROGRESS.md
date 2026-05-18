@@ -946,6 +946,29 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (twenty-first)
+
+### 2 bugs fixed (96 commits total)
+
+**Bug 53 — `send_reminders.py`: emails every non-picker every Friday of the offseason**
+- Same pattern as Bug 52. After week 22 settles, `detect_current_week()` returns 22. Week 22 games exist (all final), so the "no games" guard doesn't fire. Any player who didn't submit picks for week 22 would be emailed a stale reminder every Friday.
+- Fix: after fetching the games list, check if all are `final`/`voided` → return early.
+
+**Bug 54 — `settle_week.py`: redundant ESPN calls and re-settlement every Tuesday in offseason**
+- Same pattern. Added a two-condition guard: if all games are `final`/`voided` AND all active players have `end_points` set in `week_log` for this week → fully settled → return early.
+- Guard correctly falls through on the first Tuesday (Super Bowl Tuesday): games are final but week_log not yet written, so settlement proceeds normally using existing settlement data in `picks_reveal_v`.
+- Subsequent Tuesdays: both conditions met → early return, no wasted ESPN call.
+
+### detect_cancellations.py offseason: verified safe
+- ESPN scoreboard (no week params) returns current/recent week's games
+- In the offseason, no week 22 games appear on ESPN's current scoreboard
+- Even if a false match occurred, the "already voided/postponed" guard prevents re-flagging
+- No fix needed ✅
+
+### Running total: 54 bugs fixed, 96 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (twentieth)
 
 ### 2 bugs fixed (94 commits total)
