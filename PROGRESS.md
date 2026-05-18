@@ -946,6 +946,31 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (twenty-sixth)
+
+### 2 bugs fixed (109 commits total)
+
+**Bug 60 — `public.py week_view` + `game_pick_totals_v`: scores missing in heatmap**
+- `game_pick_totals_v` doesn't include `home_score`/`away_score` columns. The week view template uses `g.home_score` and `g.away_score` from `game_totals` for in-progress/final games → they rendered empty.
+- Fix: merge scores from `db.get_games()` into each `game_totals` row in the `week_view` route. No migration needed.
+
+**Bug 61 — "11:59am ET" deadline in all email templates (5 files)**
+- `weekly_spreads.html`, `reminder.html`, `magic_link.html`, `email_send.py` subject line, and `lock_and_reveal.py` docstring all said "Saturday 11:59am ET". The actual hard lock is noon ET (12:00 PM) per `saturday_noon_et()`. README was fixed in iteration 13; RUNBOOK in iteration 15 — but the 5 player-facing email files were missed.
+- Fix: corrected to "noon ET" in all 5 locations.
+
+### Also verified clean this iteration
+- `auth.py`: HTTP Basic auth correct; timing-safe comparison; 401 with WWW-Authenticate ✅
+- `main.py`: dead templates instance removed; clean imports ✅
+- `leaderboard.html`: `is_live` LIVE banner, htmx polling, prize chip rendering all correct ✅
+- `standings_rows.html`: `rank_display` medal logic correct for ties ✅
+- `player_profile.html`: season P&L card, week-by-week table, picks history expansion, season chart — all correct ✅
+- `admin/dashboard.html`: pay toggle, resend link, spread warnings, penalty waive, audit log — all correct ✅
+- `game_pick_totals_v`: correct LEFT JOIN aggregation; `coalesce(sum(...), 0)` prevents NULL for no-pick games ✅
+
+### Running total: 61 bugs fixed, 109 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (twenty-fifth)
 
 ### 2 bugs fixed + 1 cleanup (106 commits total)
