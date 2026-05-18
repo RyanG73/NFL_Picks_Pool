@@ -1895,3 +1895,42 @@ Line 34: `{% if standings %}` correctly hides the "Last Week's Standings" sectio
 Note: `week_committed_points(player_id, season, week)` SQL function also exists but is unused; Python picks route computes available balance in Python. All four functions are correct implementations even if only `lock_kicked_off_picks` and `settle_game_picks` are called from application code.
 
 ### Running total: 75 bugs fixed, 133 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-eighth)
+
+### 1 bug fixed — player profile exposed current-week picks before Saturday noon
+
+**Bug 76 — `player_profile` route leaked unrevealed current-week picks**
+
+`standings_rows.html:24` links player names to `/player/{{ row.player_id }}` (public URL, no auth). The player profile route called `db.get_player_picks_history(player_id, SEASON)` which queries ALL picks from `picks_reveal_v` with no time gate, then showed them all in the "Picks History" section. Any visitor could:
+1. Open the leaderboard → see all player names
+2. Click a player → `/player/<uuid>`
+3. Read that player's current week's picks BEFORE Saturday noon
+
+This violates the privacy rule: "Before [Saturday noon], only you and the admin can see your picks."
+
+Fix: Added `sat_noon` check in `player_profile` route. Current-week picks are excluded from `picks_by_week` if `now < sat_noon`. Past weeks (already settled/revealed) are always shown.
+
+```python
+picks_revealed = now >= sat_noon
+for pick in all_picks:
+    if pick["week"] == current_week and not picks_revealed:
+        continue
+    picks_by_week.setdefault(pick["week"], []).append(pick)
+```
+
+### Also noted this iteration
+
+**CDN version pinning audit** across all templates:
+- htmx: `@1.9.12` — pinned ✅
+- Chart.js: `@4.4.0` — pinned ✅
+- Tailwind CSS: no version (cdn.tailwindcss.com latest) — minor concern
+- marked.js: no version (jsdelivr latest) — minor concern (flagged in iteration 47)
+
+The two unpinned CDN deps are cosmetic rendering libraries (CSS/Markdown); failures would show un-styled or raw-text pages, not data corruption. Acceptable risk for a small pool app without a frontend build step.
+
+**`player_profile` route** — otherwise correct: `get_player_picks_history` returns all picks in week/kickoff order; `picks_by_week` grouping with `setdefault` is correct; 404 for unknown player_id. ✅
+
+### Running total: 76 bugs fixed, 134 commits

@@ -222,9 +222,19 @@ async def player_profile(request: Request, player_id: str):
     penalties = db.get_penalties(player_id, SEASON)
     all_picks = db.get_player_picks_history(player_id, SEASON)
 
-    # Group picks by week for the pick-by-pick history section
+    # Determine which weeks have been publicly revealed (sat_noon has passed).
+    # Current week's picks are hidden until Saturday noon ET.
+    current_week = _current_week()
+    now = datetime.now(timezone.utc)
+    current_games = db.get_games(SEASON, current_week)
+    sat_noon = saturday_noon_et(current_games)
+    picks_revealed = now >= sat_noon
+
+    # Group picks by week — exclude current week if not yet revealed
     picks_by_week: dict[int, list[dict]] = {}
     for pick in all_picks:
+        if pick["week"] == current_week and not picks_revealed:
+            continue
         picks_by_week.setdefault(pick["week"], []).append(pick)
 
     return templates.TemplateResponse("player_profile.html", {
@@ -234,7 +244,7 @@ async def player_profile(request: Request, player_id: str):
         "penalties": penalties,
         "picks_by_week": picks_by_week,
         "season": SEASON,
-        "week": _current_week(),
+        "week": current_week,
     })
 
 
