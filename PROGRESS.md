@@ -2008,3 +2008,49 @@ No additional leaks found.
 - All other functions confirmed correct in prior iterations ✅
 
 ### Running total: 76 bugs fixed, 135 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fifty-first)
+
+### 1 bug fixed — admin player endpoints raised StopIteration on bad player_id
+
+**Bug 77 — `toggle_paid` and `resend_link` used `next()` without a default**
+
+`api/routes/admin.py` lines 73 and 83 used:
+```python
+player = next(p for p in players if p["id"] == player_id)
+```
+Without a default, if `player_id` doesn't match any player, `next()` raises `StopIteration`. FastAPI doesn't handle `StopIteration` — it propagates as an unhandled exception and returns a 500 Internal Server Error.
+
+Compare with `edit_picks_form` (line 129) which correctly uses:
+```python
+player = next((p for p in players if p["id"] == player_id), None)
+```
+
+Fix: added `None` default and redirect to `/admin/?error=player_not_found` in both handlers.
+
+Note: these are admin-only endpoints and the dashboard always provides valid player IDs via form buttons, so this would only surface from a stale page or a crafted request. Still, it should return a clean redirect, not a 500.
+
+### Also verified this iteration — admin.py, email_send.py, picks.py fully correct
+
+**`admin.py`** (full read):
+- `add_player`: creates player → seeds week_log (25k) → sends magic link → logs action ✅
+- `payout`: correctly merges `paid_buyin` from players table into standings ✅
+- `void_game`: `voided_reason` column exists in games table (migration line 16) ✅
+- `adjust_points`: no 0-floor on `new_end` — admin can set negative end_points intentionally; acceptable for admin correction tool ✅
+- `broadcast`: `banner_text or None` correctly coerces empty string to null ✅
+- Penalties query uses embedded `players(name)` for display only, not filtering — not subject to PostgREST LEFT JOIN footgun ✅
+
+**`email_send.py`** (full read):
+- `send_weekly_spreads`: sends individual emails per player — 50 API calls; within Resend free-tier limits (3k/mo) ✅
+- `send_picks_reveal` + `send_broadcast`: BCC pattern (single API call) ✅
+- Guard `if not players: return` in `send_picks_reveal` and `send_broadcast` ✅
+
+**`picks.py`** (full re-read):
+- `effective_available = available - locked_amount` budget isolation for Thursday picks ✅
+- `_validate_picks` skips locked/non-scheduled games silently; sums only unlocked new picks against budget ✅
+- `delete_unlocked_picks_not_in` removes stale unlocked picks; locked picks preserved ✅
+- Display `remaining_points` consistent with validation semantics ✅
+
+### Running total: 77 bugs fixed, 136 commits

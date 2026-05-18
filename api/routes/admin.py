@@ -70,7 +70,9 @@ async def add_player(
 @router.post("/player/{player_id}/paid", response_class=RedirectResponse)
 async def toggle_paid(player_id: str, _=Depends(require_admin)):
     players = db.get_all_players(active_only=False)
-    player = next(p for p in players if p["id"] == player_id)
+    player = next((p for p in players if p["id"] == player_id), None)
+    if not player:
+        return RedirectResponse("/admin/?error=player_not_found", status_code=303)
     new_val = not player["paid_buyin"]
     db.update_player(player_id, paid_buyin=new_val)
     db.log_action("toggle_paid", {"player_id": player_id, "paid_buyin": new_val})
@@ -80,7 +82,9 @@ async def toggle_paid(player_id: str, _=Depends(require_admin)):
 @router.post("/player/{player_id}/resend-link", response_class=RedirectResponse)
 async def resend_link(player_id: str, _=Depends(require_admin)):
     players = db.get_all_players(active_only=False)
-    player = next(p for p in players if p["id"] == player_id)
+    player = next((p for p in players if p["id"] == player_id), None)
+    if not player:
+        return RedirectResponse("/admin/?error=player_not_found", status_code=303)
     send_magic_link(player)
     db.log_action("resend_link", {"player_id": player_id})
     return RedirectResponse("/admin/", status_code=303)
