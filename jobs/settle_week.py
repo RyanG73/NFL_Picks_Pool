@@ -181,8 +181,9 @@ def main(week: int, season: int, dry_run: bool = False):
         print(f"  {player['name']}: {current['start_points']:,} → {end_points:,}")
         if not dry_run:
             db.upsert_week_log(player["id"], season, week, current["start_points"], end_points)
-            # Seed next week's start_points
-            db.upsert_week_log(player["id"], season, week + 1, end_points)
+            # Seed next week's start_points (skip after week 22 — no week 23)
+            if week < 22:
+                db.upsert_week_log(player["id"], season, week + 1, end_points)
 
     print("  Done.")
 
