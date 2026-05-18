@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}2026 Rules — NFL Picks Pool{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold">{{ season }} Pool Rules</h1>
+  <span class="text-xs text-gray-400">Official rulebook</span>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 prose prose-sm max-w-none" id="rules-body">
+  <noscript><pre class="text-xs whitespace-pre-wrap">{{ raw_md }}</pre></noscript>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  document.getElementById('rules-body').innerHTML = marked.parse({{ raw_md | tojson }});
+</script>
+{% endblock %}

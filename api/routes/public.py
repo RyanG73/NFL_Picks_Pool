@@ -1,10 +1,13 @@
 import os
+import pathlib
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from api.lib import db
 from api.lib.timewall import saturday_noon_et, compute_prize_ladder, apply_prize_ladder
+
+_RULES_PATH = pathlib.Path(__file__).parent.parent.parent / "Rules" / "2026_NFL_PICKS_POOL_RULES.md"
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -223,4 +226,19 @@ async def player_profile(request: Request, player_id: str):
         "picks_by_week": picks_by_week,
         "season": SEASON,
         "week": _current_week(),
+    })
+
+
+# ── Rules ──────────────────────────────────────────────────────────────────
+
+@router.get("/rules", response_class=HTMLResponse)
+async def rules_page(request: Request):
+    try:
+        raw_md = _RULES_PATH.read_text()
+    except FileNotFoundError:
+        raw_md = "Rules not found."
+    return templates.TemplateResponse("rules.html", {
+        "request": request,
+        "raw_md": raw_md,
+        "season": SEASON,
     })

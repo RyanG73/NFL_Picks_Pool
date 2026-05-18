@@ -14,8 +14,8 @@ Historical_Code/
 Rules/*.pdf
 Rules/*.docx
 
-# Generated HTML exports (pandoc artifacts)
-*.html
+# Generated HTML exports (pandoc artifacts — root-level only, not app templates)
+/*.html
 *_files/
 
 # Claude Code session data
