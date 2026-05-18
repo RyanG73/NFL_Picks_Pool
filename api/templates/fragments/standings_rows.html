@@ -11,11 +11,11 @@
 
   <!-- Rank -->
   <td class="px-4 py-3 text-gray-400 font-mono text-sm">
-    {% set rank_num = loop.index %}
-    {% if not row.is_eliminated and rank_num <= 3 %}
-      {{ ['🥇','🥈','🥉'][rank_num-1] }}
+    {% set rd = row.rank_display | default(loop.index | string) %}
+    {% if not row.is_eliminated and rd in ['1', '2', '3'] %}
+      {{ ['🥇','🥈','🥉'][(rd | int) - 1] }}
     {% else %}
-      {{ row.rank_display | default(rank_num | string) }}
+      {{ rd }}
     {% endif %}
   </td>
 
