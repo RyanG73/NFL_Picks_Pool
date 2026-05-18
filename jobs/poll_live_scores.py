@@ -103,9 +103,10 @@ def main(season: int, week: int | None = None, dry_run: bool = False, once: bool
             params: dict = {"as_of": now.isoformat()}
             if now >= sat_noon:
                 params["sat_noon"] = sat_noon.isoformat()
-            locked = db.get_client().rpc("lock_kicked_off_picks", params).execute()
-            if locked.data:
-                print(f"  Locked {locked.data} pick(s)")
+            if not dry_run:
+                locked = db.get_client().rpc("lock_kicked_off_picks", params).execute()
+                if locked.data:
+                    print(f"  Locked {locked.data} pick(s)")
 
             scores = fetch_espn_scores()
             update_games(season, week, games, scores, dry_run)

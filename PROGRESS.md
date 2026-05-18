@@ -1706,3 +1706,37 @@ Fix: removed `CRON_SECRET` from the GitHub Secrets list; added a clarifying note
 **`.env.example` vs workflow secrets cross-check**: all 8 workflow secrets (`ADMIN_EMAIL`, `APP_URL`, `FROM_EMAIL`, `FROM_NAME`, `ODDS_API_KEY`, `RESEND_API_KEY`, `SUPABASE_SERVICE_KEY`, `SUPABASE_URL`) have corresponding entries in `.env.example`. `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `CRON_SECRET`, `CURRENT_SEASON` are Vercel-only / documented separately. ✅
 
 ### Running total: 74 bugs fixed, 127 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-second)
+
+### 1 bug fixed — `--dry-run` in poll_live_scores.py didn't gate lock RPC
+
+**Bug 75 — `lock_kicked_off_picks` RPC fires even with `--dry-run` in `poll_live_scores.py`**
+
+In `jobs/poll_live_scores.py::main()`, the `dry_run` flag was passed to `update_games()` (gating score writes) but NOT to the `lock_kicked_off_picks` RPC call. Running with `--dry-run` would print score diffs without writing them but would still lock picks in the DB — silently modifying data during what the operator expects to be a read-only test.
+
+Impact: during Phase D dry-run testing (or `make smoke`), running `python jobs/poll_live_scores.py --dry-run --once` would lock any kicks-off picks from the live DB, potentially affecting real player data if run against the production Supabase.
+
+Fix: wrapped the `rpc()` call with `if not dry_run:` guard.
+
+### Also verified clean this iteration
+
+**`jobs/pull_spreads.py`** ✅
+
+- Week 1 seeding: `db.get_week_log(player_id, season)` returns empty list → `start = 25_000` (correct default)
+- Mid-season seeding: finds most recent week by `max(prior, key=lambda r: r["week"])`; uses `end_points` if settled, falls back to `start_points` if only seeded — correct for the Tuesday-between-Wednesday window when settlement may not have run yet
+- Week 1 guard: `standings = db.get_standings(season, week - 1) if week > 1 else []` — no prior-week standings for Week 1 email ✅
+- Paid count: `sum(1 for p in players if p.get("paid_buyin"))` uses active players only ✅
+- Dry run: prints game lines and returns before any upsert or email ✅
+- ESPN cross-check: non-fatal try/except; alert email only sent if `ADMIN_EMAIL` set and not dry_run ✅
+
+**`jobs/poll_live_scores.py`** ✅ (after Bug 75 fix)
+
+- ESPN `state` → DB status mapping: `"pre"→"scheduled"`, `"in"→"in_progress"`, `"post"→"final"` ✅
+- Skip voided/final games prevents overwriting settled or voided status ✅
+- Change detection before write reduces unnecessary DB writes ✅
+- Lock RPC integration in polling loop: fires every 60s during game windows — provides per-game lock resilience even on Vercel Hobby plan (where Vercel cron may lag to daily) ✅
+
+### Running total: 75 bugs fixed, 128 commits
