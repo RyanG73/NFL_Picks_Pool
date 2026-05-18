@@ -778,6 +778,41 @@ All code work is complete. 41 bugs fixed over 68 commits. Infrastructure setup i
 
 ---
 
+## Loop Iteration — 2026-05-17 (eleventh)
+
+### 2 bugs found and fixed (80 commits total)
+
+**Bug 44 — `weekly_spreads.html`: prize column bypasses tie-splitting**
+- The email template used `loop.index` to map standings positions to prizes (e.g., player at position 3 gets `prizes[2]`). This completely bypasses `apply_prize_ladder`, which splits tied players' prizes evenly when multiple players have the same final points.
+- A 3-way tie for 2nd place should split prizes[1]+prizes[2]+prizes[3] three ways; the email would show three different amounts instead.
+- Fix: call `apply_prize_ladder(standings, prizes)` in `pull_spreads.py` before passing to `send_weekly_spreads`; template now uses `row.prize` (with `loop.index` fallback for safety).
+
+**Bug 45 — UTC kickoff times displayed as ET in leaderboard and admin**
+- `kickoff_at` is stored in UTC (from The Odds API `commence_time`). `leaderboard.html` displayed `g.kickoff_at[11:16]` labeled as "ET"; `admin/dashboard.html` displayed `g.kickoff_at[:16] | replace('T',' ')` labeled as "ET".
+- A 1:00 PM ET Sunday game is stored as `2026-09-13T17:00:00Z`, which would show as "17:00 ET" — a 4-hour error visible to all users.
+- Fix: added `kickoff_time_et(utc_iso)` helper to `timewall.py`; registered as `kickoff_et` Jinja2 filter in `public.py` and `admin.py`; both templates updated to use `{{ g.kickoff_at | kickoff_et }}`.
+
+### Audit coverage this iteration
+
+| File | Status |
+|---|---|
+| `api/routes/picks.py` | ✅ Clean — lock enforcement, locked-budget deduction, stale-pick deletion all correct |
+| `api/routes/admin.py` | ✅ Fixed (kickoff ET display) |
+| `api/routes/public.py` | ✅ Fixed (kickoff ET display; email prize tie-split) |
+| `api/lib/timewall.py` | ✅ Extended with `kickoff_time_et()` |
+| `api/templates/leaderboard.html` | ✅ Fixed (UTC→ET) |
+| `api/templates/admin/dashboard.html` | ✅ Fixed (UTC→ET) |
+| `api/templates/week_view.html` | ✅ Clean — date only (no time), no ET issue |
+| `api/templates/email/weekly_spreads.html` | ✅ Fixed (prize tie-split) |
+| `api/templates/admin/payout.html` | ✅ Clean |
+| `jobs/settle_week.py` | ✅ Clean — ESPN team name matching, picks_reveal_v fix, balance logic correct |
+| `jobs/detect_cancellations.py` | ✅ Clean — team name matching, no undefined vars |
+| `jobs/pull_spreads.py` | ✅ Fixed (apply_prize_ladder before email) |
+
+### Running total: 45 bugs fixed across all sessions (80 commits)
+
+---
+
 ## Loop Iteration — 2026-05-17 (tenth)
 
 ### Clean audit pass — no new bugs (76 commits total)
