@@ -64,7 +64,9 @@
         {% else %}—{% endif %}
       </td>
       <td style="text-align:right;">
-        {% if prizes and not row.is_eliminated and loop.index <= prizes|length %}
+        {% if row.prize %}
+          <span class="badge badge-green">{{ row.prize }}</span>
+        {% elif prizes and not row.is_eliminated and loop.index <= prizes|length %}
           <span class="badge badge-green">{{ prizes[loop.index-1] }}</span>
         {% endif %}
       </td>
