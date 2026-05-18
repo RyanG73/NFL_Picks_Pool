@@ -627,6 +627,30 @@ No known bugs remain. The codebase is production-ready pending infrastructure se
 
 ---
 
+## Loop Iteration — 2026-05-17 (ninth)
+
+### 2 bugs fixed (75 commits total)
+
+**Bug 43 — `lock_and_reveal.py`: all active players wrongly penalized in offseason**
+- GitHub Actions `cron-lock-and-reveal.yml` runs every Saturday year-round. In the offseason (or pre-season before spreads load), `games_this_week = set()`. PostgREST `.in_("game_id", [])` returns 0 picks → `submitted_ids = {}` → every active player is treated as having missed the week and receives an incorrect no-bet penalty.
+- Fix: early return with a log message when `games_this_week` is empty.
+- `send_reminders.py` already had this guard (line 26-28). `settle_week.py` is safe (iterates empty list, idempotent upserts carry forward start_points). `pull_spreads.py` already had its own guard.
+
+**Bug 42 — `poll_live_scores.py`: Thursday picks not locked at kickoff without Vercel Pro** *(previous iteration, documented together)*
+
+### All job offseason behavior verified
+
+| Job | Offseason behavior | Safe? |
+|---|---|---|
+| `pull_spreads.py` | Calls Odds API (0 results), inserts nothing | ✅ Yes (idempotent) |
+| `send_reminders.py` | Detects empty games, returns early | ✅ Yes (guarded) |
+| `lock_and_reveal.py` | **Now** returns early with no games | ✅ Fixed |
+| `poll_live_scores.py` | No games → no picks to lock → no scores to update | ✅ Yes |
+| `settle_week.py` | Settles 0 games, seeds week+1 with same points | ✅ Yes (idempotent) |
+| `detect_cancellations.py` | No games → no cancellations to detect | ✅ Yes |
+
+---
+
 ## Loop Iteration — 2026-05-17 (eighth)
 
 ### 1 critical bug fixed (72 commits total)
