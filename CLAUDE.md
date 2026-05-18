@@ -23,9 +23,12 @@ Fully automated NFL picks pool web app (40-50 players, $50 buy-in, 25k starting 
 - Picks form: 3 slots max, must submit all at once; stale picks (changed games) are deleted on resubmit
 - settlement.py is pure logic; settle_week.py does all DB writes; idempotent re-runs are safe
 - No-bet penalty: -5000 × consecutive misses, skips eliminated players (0 pts)
-- Dynamic prize ladder: top 15% of paid players, `compute_prize_ladder(paid_count)` in `timewall.py`
+- Dynamic prize ladder: top 15% of paid players, `compute_prize_ladder(paid_count)` and `apply_prize_ladder(standings, prizes)` in `timewall.py`
+- Picks effective balance: `effective_available = available - locked_amount` where `locked_amount` = sum of already-locked Thursday picks; new unlocked picks are validated against this reduced budget, not the full weekly balance
 - ESPN week mapping: pool weeks 1-18 = seasontype 2, week 19→wk1, 20→wk2, 21→wk3, 22→wk5 (Super Bowl)
 - PostgREST embedded filters (`.eq("games.season", x)`) use LEFT JOIN — never filter parent rows. Always use game-ID prefetch + `.in_("game_id", ids)` pattern instead.
+- `_load_via_nfl_data_py` in `settle_week.py` is intentionally dead code (`NotImplementedError`) — team abbreviations vs. display names are incompatible; ESPN scoreboard is the only score source
+- `get_client()` in `db.py` uses `@lru_cache(maxsize=1)` — safe for Vercel serverless (one instance per cold start)
 
 ## Running Locally
 ```bash

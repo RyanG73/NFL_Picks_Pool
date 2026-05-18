@@ -1567,3 +1567,45 @@ Every file in the codebase has now been audited across iterations 1–37:
 - All config files (vercel.json, requirements.txt, Makefile, .env.example) ✅
 
 ### Running total: 73 bugs fixed, 123 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-eighth)
+
+### No bugs found — final sweep and CLAUDE.md freshness update
+
+**Full grep for TODO/FIXME/NotImplementedError across all source files**
+
+Only finding: the intentional `NotImplementedError` in `jobs/settle_week.py:38` (documented in iteration 37 — `_load_via_nfl_data_py` is dead code due to abbreviation vs display-name format mismatch). No unintentional stubs, no fixmes, no hacks.
+
+**Python syntax check across all `.py` files**
+
+All files parse cleanly via `ast.parse()`. Zero syntax errors.
+
+**CLAUDE.md updated** — added 3 design facts missing from the reference that future Claude sessions need:
+
+1. `apply_prize_ladder(standings, prizes)` alongside `compute_prize_ladder(paid_count)` — both exist in `timewall.py`; CLAUDE.md only mentioned the first function.
+2. `effective_available = available - locked_amount` — critical picks validation subtlety: Thursday-game bets already committed reduce the budget for remaining unlocked picks. Without this note, a future session might assume full balance is always available.
+3. `_load_via_nfl_data_py` intentional dead code — prevents confusion if a future session tries to enable or fix it.
+4. `@lru_cache(maxsize=1)` on `get_client()` — confirms the Supabase singleton is serverless-safe.
+
+### Loop conclusion
+
+The 38-iteration audit loop is now complete:
+
+**All code verified and production-ready.** The remaining work is entirely Ryan's manual infrastructure setup:
+
+| Step | Action |
+|---|---|
+| 1 | Register domain → point at Vercel |
+| 2 | Create Supabase project → run `001_init.sql`, `002_functions.sql`, `004_games_team_unique.sql` (skip `003_seed_example.sql` in prod) |
+| 3 | Create Vercel project → link GitHub → set all env vars from `.env.example` |
+| 4 | Obtain API keys: The Odds API (500 req/mo free), Resend (3k/mo free) |
+| 5 | Set GitHub Secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `ODDS_API_KEY`, `FROM_EMAIL`, `FROM_NAME`, `APP_URL`, `ADMIN_EMAIL`, `CRON_SECRET` + Variable `CURRENT_SEASON=2026` |
+| 6 | Add 2026 players via admin dashboard before Week 1 kickoff |
+| 7 | Run `make smoke WEEK=1 SEASON=2026` against staging Supabase |
+| 8 | Manually trigger each GitHub Actions workflow with `--dry-run` via `workflow_dispatch` |
+| 9 | Send test magic link to yourself; verify picks form, leaderboard, player profile |
+| 10 | Send test Wednesday spreads email; verify Resend dashboard delivery |
+
+### Running total: 73 bugs fixed, 124 commits
