@@ -2054,3 +2054,34 @@ Note: these are admin-only endpoints and the dashboard always provides valid pla
 - Display `remaining_points` consistent with validation semantics ✅
 
 ### Running total: 77 bugs fixed, 136 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fifty-second)
+
+### No bugs found — spreads.py, timewall.py, pull_spreads.py verified
+
+**`api/lib/spreads.py`** ✅
+
+- `_extract_spread`: spread line interpretation correct — negative home_line = home favored, positive = away favored, zero = pick-em (home arbitrarily designated "favorite"; settlement ATS logic handles spread=0 correctly). ✅
+- Pick-em (spread=0): `abs(0.0) = 0.0` stored; settlement `diff > 0 → FAVORITE wins` regardless of who's labeled favorite. ✅
+- `fetch_espn_spreads`: ESPN spread is already an absolute magnitude; `cross_check_spreads` compares correctly. ✅
+- `cross_check_spreads`: `delta = abs(float(g["spread"]) - espn)` — both magnitudes, comparison correct. ✅
+- `fetch_week_games`: filters `if g.get("bookmakers")` — skips games with no odds posted. ✅
+
+**`api/lib/timewall.py`** ✅
+
+- `saturday_noon_et`: finds first Sunday game via `weekday() == 6` (Monday=0, Sunday=6), returns preceding Saturday 12:00 ET via `ZoneInfo("America/New_York")` for DST-aware conversion. ✅
+- No-Sunday-games fallback: `datetime.max.replace(tzinfo=timezone.utc)` — effectively disables the Saturday-noon lock for Thursday-only or Saturday-only playoff slates (each game locks at its own kickoff). ✅
+- `_parse_utc`: handles naive ISO strings by assuming UTC; Python 3.12 `fromisoformat` handles `Z` suffix. ✅
+- `kickoff_time_et`: `hour % 12 or 12` correctly converts midnight (0→12) and noon (12→12). ✅
+- `compute_prize_ladder` / `apply_prize_ladder`: prize math and tie-split logic verified in iteration 44, still correct. ✅
+
+**`jobs/pull_spreads.py`** ✅ (with one noted limitation)
+
+- Week_log seeding: `max(prior, key=lambda r: r["week"])` gets most recent week entry; uses `end_points` if set, else `start_points`. Works correctly in normal Tuesday-settle → Wednesday-spread flow. ✅
+- ESPN cross-check → admin alert email → prints discrepancies. Non-fatal (caught in try/except). ✅
+- `week - 1` standings for email; Week 1 guard: `if week > 1 else []`. ✅
+- **Known limitation**: `_transform` always sets `"status": "scheduled"`; `upsert_game` would reset an in-progress game's status on a mid-week re-run. Not a bug in normal operation (pull_spreads runs Wednesday before Thursday kickoff). Admin can correct via `/admin/game/<id>/correct-score` if ever needed.
+
+### Running total: 77 bugs fixed, 137 commits
