@@ -946,6 +946,28 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (twentieth)
+
+### 2 bugs fixed (94 commits total)
+
+**Bug 51 — `settle_week.py`: seeds spurious week 23 after Super Bowl** *(documented in previous iteration)*
+
+**Bug 52 — `lock_and_reveal.py`: sends picks reveal email every Saturday of the offseason**
+- After week 22 (Super Bowl) settles, all games have `status='final'`. `detect_current_week()` returns 22 (max week in games). The job finds `games_this_week` non-empty (week 22 games exist) so the "no games" early-return guard doesn't fire. No penalties are applied (all players submitted), but the picks reveal email IS sent. Then every subsequent Saturday of the offseason, same thing — stale week 22 reveal email sent to all players.
+- Fix: after the "no games" guard, check if all games in `games_list` are `final` or `voided`. If so, the reveal was already sent — return early.
+- This guard also correctly handles the case where settle_week.py runs before lock_and_reveal on the same Saturday (edge case where settlement happens early).
+
+### Also verified (no bugs found)
+- `pull_spreads.py` week_log seeding: correctly uses `max(prior, key=lambda r: r["week"])` to seed current week from most recent end_points. Falls back to 25,000 for week 1 (no prior rows). ✅
+- `settle_week.py` + `pull_spreads.py` ordering: both seed week_log idempotently; upsert-on-conflict means the second writer wins with the same value. ✅
+- Admin add_player: seeds week_log for `_current_week()` with 25,000. New mid-season players get current week start but no prior weeks — correct since rules forbid mid-season adds. ✅
+- `lock_and_reveal.py` week 1: `start_by_player.get(player_id, 25_000)` default correctly treats players with no week_log row as non-eliminated. ✅
+- `picks.py` week 1: `_available_points()` defaults to 25,000 when no week_log row exists. ✅
+
+### Running total: 52 bugs fixed, 94 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (nineteenth)
 
 ### 1 bug fixed (92 commits total)
