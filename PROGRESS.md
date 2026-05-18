@@ -2120,3 +2120,40 @@ Note: these are admin-only endpoints and the dashboard always provides valid pla
 - `ADMIN_EMAIL` fallback: `os.environ.get("ADMIN_EMAIL", os.environ.get("FROM_EMAIL", ""))`. ✅
 
 ### Running total: 77 bugs fixed, 138 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fifty-fourth)
+
+### No bugs found — auth.py, all 3 admin templates verified
+
+**`api/lib/auth.py`** ✅
+
+- `require_admin`: uses `secrets.compare_digest` for timing-safe comparison (prevents timing attacks). ✅
+- Both username and password encoded to `bytes` before compare. ✅
+- Default credentials `admin`/`changeme` are dev defaults only; production must set env vars (documented in README). ✅
+- 401 response includes `WWW-Authenticate: Basic` header so browsers prompt for credentials. ✅
+- `validate_magic_token`: 404 for invalid/missing tokens, 403 for inactive players. ✅
+
+**`admin/dashboard.html`** ✅
+
+- Prize pool display: `{{ players | selectattr('paid_buyin') | list | length * 50 }}` — Jinja2 parses `(players | selectattr | list | length) * 50` correctly (arithmetic after the filter chain). ✅
+- Player-to-standing join: `standings | selectattr('player_id', 'eq', player.id) | first` returns Undefined if no standing; `if standing else '—'` guard handles inactive players with no week_log row. ✅
+- Penalties table: `p.players.name` accesses PostgREST embedded `players(name)` dict correctly. ✅
+- `onclick="return confirm('Void this game?')"` — intentional admin UX confirmation before voiding. ✅
+- All form `action` attributes correctly point to admin route paths. ✅
+
+**`admin/edit_picks.html`** ✅
+
+- Form has no explicit `action` — defaults to current URL `/admin/picks/{player_id}/{week}`, which matches the POST handler. ✅
+- `pick.games.*` accesses the embedded `games(*)` data from `db.get_player_picks` (`select("*, games(*)")`). ✅
+- Admin override form bypasses normal bet-amount validation (intentional: admin can correct any amount). ✅
+
+**`admin/payout.html`** ✅
+
+- `row.prize | replace('$','') | replace(',','')` correctly strips currency formatting for Venmo amount parameter. ✅
+- `row.name | urlencode` safely encodes names with spaces for URLs (minor: Venmo handles ≠ full names — Ryan will search anyway). ✅
+- P&L computed as `current_points - 25000` (start points). ✅
+- `row.rank_display | default(loop.index | string)` — defensive fallback; `apply_prize_ladder` always sets `rank_display`, so never actually triggered. ✅
+
+### Running total: 77 bugs fixed, 139 commits
