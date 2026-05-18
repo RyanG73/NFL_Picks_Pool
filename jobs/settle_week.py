@@ -89,9 +89,22 @@ def load_final_scores(season: int, week: int) -> dict[tuple, dict]:
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[settle_week] season={season} week={week} dry_run={dry_run}")
 
+    games = db.get_games(season, week)
+    if not games:
+        print(f"  No games found for week {week} season {season} — nothing to settle.")
+        return
+    # Skip if all games are already settled (offseason guard: avoids redundant ESPN calls)
+    if all(g["status"] in ("final", "voided") for g in games):
+        # Check if week_log is already fully written
+        players = db.get_all_players()
+        week_log_rows = db.get_client().table("week_log").select("player_id, end_points").eq("season", season).eq("week", week).execute().data
+        settled_ids = {r["player_id"] for r in week_log_rows if r["end_points"] is not None}
+        if all(p["id"] in settled_ids for p in players if p["is_active"]):
+            print(f"  Week {week} fully settled — nothing to do.")
+            return
+
     final_scores = load_final_scores(season, week)
 
-    games = db.get_games(season, week)
     players = db.get_all_players()
 
     # ── Settle each game ────────────────────────────────────────────────────
