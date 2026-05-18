@@ -627,6 +627,47 @@ No known bugs remain. The codebase is production-ready pending infrastructure se
 
 ---
 
+## Loop Iteration — 2026-05-17 (final)
+
+### 2 plan items completed (66 commits total)
+
+**Plan A4 (part 2) — Admin: ESPN vs Odds API spread diff banner**
+- `admin_home()` now calls `fetch_espn_spreads()` + `cross_check_spreads()` on every page load (non-fatal; caught exception yields `[]`).
+- Admin dashboard shows a yellow warning banner in the Games section listing any game where Odds API and ESPN spreads differ ≥1.5 pts, so Ryan can correct before the Wednesday email.
+- Files: `api/routes/admin.py` (import + query), `api/templates/admin/dashboard.html` (warning block).
+
+**Plan B — 2026 Rulebook committed and served at `/rules`**
+- `Rules/2026_NFL_PICKS_POOL_RULES.md` committed to the repo (was untracked; `.gitignore` already excluded `*.pdf`/`*.docx` but not `*.md`).
+- Fixed `.gitignore`: `*.html` → `/*.html` so pandoc root-level exports are excluded but `api/templates/*.html` subdirectory files are not blocked.
+- New `GET /rules` route in `public.py` reads the markdown file and passes raw text to template.
+- New `api/templates/rules.html` renders it client-side via `marked.js` (CDN, no new Python dep); `<pre>` fallback for no-JS.
+- Rules link added to top nav in `base.html` — players can reach it from any page.
+
+### All plan code items complete
+
+| Plan Item | Status |
+|---|---|
+| A1 — Saturday-noon hard lock | ✅ Done |
+| A2 — Dynamic prize scaling (top 15%, escalating) | ✅ Done |
+| A3 — Pre-lock pick privacy (`picks_revealed` gate) | ✅ Done |
+| A4 — ESPN spread cross-check in pull_spreads.py | ✅ Done |
+| A4 — Admin spread diff display | ✅ Done (this iteration) |
+| A5 — Prize splitter for ties (`apply_prize_ladder`) | ✅ Done |
+| B — 2026 Rulebook authored and committed | ✅ Done (this iteration) |
+| C/D — Infrastructure + dry-run | ⏳ Ryan's manual work |
+
+### Infrastructure checklist (Ryan's next steps)
+
+1. Register domain → point at Vercel after deploy
+2. Create Supabase project → run `001_init.sql`, `002_functions.sql`, `004_games_team_unique.sql` (skip 003 in prod)
+3. Create Vercel project → link GitHub repo → set all env vars from `.env.example`
+4. Get API keys: The Odds API (free 500 req/mo), Resend (free 3k/mo)
+5. Set GitHub Secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `ODDS_API_KEY`, `FROM_EMAIL`, `FROM_NAME`, `APP_URL`, `ADMIN_EMAIL`, `CRON_SECRET` + Variable `CURRENT_SEASON=2026`
+6. Add 2026 players via admin dashboard before Week 1 kickoff
+7. Run `make smoke WEEK=1 SEASON=2026` against staging Supabase — go/no-go gate before Week 1
+
+---
+
 ## Loop Iteration — 2026-05-17 (continued again)
 
 ### 1 more bug found and fixed (63 commits total)
