@@ -627,6 +627,45 @@ No known bugs remain. The codebase is production-ready pending infrastructure se
 
 ---
 
+## Loop Iteration — 2026-05-17 (continued again)
+
+### 1 more bug found and fixed (63 commits total)
+
+**Bug 40 — `picks_form.html`: side-toggle buttons lose styling on repeated clicks**
+- `setSide()` used a regex (`/bg-\S+|text-\S+|border-\S+/g`) to strip color classes before applying active/idle states. The regex also matched and removed base structural classes like `border` (not `border-color-*`, just `border`) and `text-sm` (not `text-color-*`, just `text-sm`).
+- After the first toggle, buttons lost their border and font-size styles. After toggling again, the regression was permanent.
+- Fix: defined 4 constant class strings (`BASE_BTN`, `FAV_ACTIVE`, `DOG_ACTIVE`, `FAV_IDLE`, `DOG_IDLE`) and do a full className replacement instead of regex surgery. `updateSideButtons()` now references the same constants for consistency.
+- Also confirmed: `api/__init__.py`, `api/lib/__init__.py`, `api/routes/__init__.py` all exist (Vercel Python packaging is correct).
+
+### Running total: 40 bugs fixed (63 commits)
+
+### Complete coverage this session
+
+| File | Status |
+|---|---|
+| `api/lib/spreads.py` | ✅ Clean |
+| `api/lib/auth.py` | ✅ Clean |
+| `api/routes/cron.py` | ✅ Clean |
+| `api/templates/picks_form.html` | ✅ Fixed (bug 40 - button CSS) |
+| `api/templates/admin/edit_picks.html` | ✅ Clean |
+| `api/templates/admin/payout.html` | ✅ Clean |
+| `api/templates/leaderboard.html` | ✅ Clean |
+| `api/templates/fragments/standings_rows.html` | ✅ Clean |
+| `api/templates/player_profile.html` | ✅ Clean |
+| `api/templates/email/base_email.html` | ✅ Clean |
+| `api/templates/email/reminder.html` | ✅ Clean |
+| `api/templates/email/magic_link.html` | ✅ Clean |
+| `api/templates/email/picks_reveal.html` | ✅ Clean |
+| `jobs/detect_cancellations.py` | ✅ Clean |
+| `jobs/send_reminders.py` | ✅ Clean |
+| `jobs/lock_and_reveal.py` | ✅ Clean |
+| `jobs/replay_test.py` | ✅ Clean (skips gracefully without CSV) |
+| `vercel.json`, `requirements.txt`, `Makefile` | ✅ All clean |
+| All 7 GitHub Actions workflows | ✅ All clean |
+| `migrations/003_seed_example.sql` | ✅ Clean (dev only) |
+
+---
+
 ## Loop Iteration — 2026-05-17 (continued)
 
 ### 2 more bugs found and fixed (61 commits total)
