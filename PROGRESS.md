@@ -946,6 +946,24 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (nineteenth)
+
+### 1 bug fixed (92 commits total)
+
+**Bug 51 — `settle_week.py`: seeds spurious week 23 after Super Bowl**
+- `week + 1` seeding at line 185 ran unconditionally for all weeks including week 22 (Super Bowl). After settling week 22, every player got a `week_log(season, 23, end_points)` entry — a week that doesn't exist in the pool.
+- The spurious row was functionally harmless: `detect_current_week()` uses the `games` table (not week_log), and the payout page uses `detect_current_week()` to find the final week. But it's incorrect data in the DB and could cause confusion when inspecting week_log directly.
+- Fix: `if week < 22: db.upsert_week_log(player_id, season, week + 1, end_points)`
+
+### Also verified
+- `poll_live_scores.py`: ESPN scoreboard query has no week/season params — returns current live week automatically. Team name matching handles playoff weeks correctly since ESPN's `displayName` matches Odds API names. Week 22 (Super Bowl) maps to `(3, 5)` in `_POOL_WEEK_MAP` in `settle_week.py`.
+- `detect_current_week()` uses `games` table only — not affected by week_log data. Would correctly return 22 after the Super Bowl (max week in games with status 'final').
+- Payout route uses `detect_current_week()` → correctly shows week 22 final standings.
+
+### Running total: 51 bugs fixed, 92 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (eighteenth)
 
 ### Clean audit pass — no new bugs (90 commits total)
