@@ -174,6 +174,14 @@ async def week_view(request: Request, week: int):
     sat_noon = saturday_noon_et(games)
     picks_revealed = now >= sat_noon  # picks are public only after Saturday noon
 
+    # game_pick_totals_v doesn't include home_score/away_score; merge from games.
+    scores_by_id = {g["id"]: g for g in games}
+    for gt in game_totals:
+        game = scores_by_id.get(gt.get("game_id"))
+        if game:
+            gt["home_score"] = game.get("home_score", 0)
+            gt["away_score"] = game.get("away_score", 0)
+
     players_picks: list[dict] = []
     if picks_revealed:
         picks = db.get_week_picks_reveal(SEASON, week)

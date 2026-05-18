@@ -1,5 +1,5 @@
 """
-Saturday 11:59am ET — apply no-bet penalties for players who haven't picked,
+Saturday ~1pm ET — apply no-bet penalties for players who haven't picked,
 then send the 'picks are live' email to everyone.
 
 Note: per-game kickoff locking happens continuously via the web app.

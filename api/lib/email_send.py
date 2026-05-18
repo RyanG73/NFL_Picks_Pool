@@ -55,7 +55,7 @@ def send_reminder(player: dict, week: int, season: int = 0) -> None:
     resend.Emails.send({
         "from": FROM,
         "to": player["email"],
-        "subject": f"⏰ Reminder: Week {week} picks due Saturday 11:59am ET",
+        "subject": f"⏰ Reminder: Week {week} picks due Saturday noon ET",
         "html": html,
     })
 

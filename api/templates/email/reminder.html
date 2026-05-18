@@ -1,10 +1,10 @@
 {% extends "email/base_email.html" %}
-{% block subject %}⏰ Reminder: Week {{ week }} picks due Saturday 11:59am ET{% endblock %}
+{% block subject %}⏰ Reminder: Week {{ week }} picks due Saturday noon ET{% endblock %}
 {% block header_sub %}Week {{ week }} Pick Reminder{% endblock %}
 
 {% block body %}
 <p>Hey {{ player.name }},</p>
-<p>Just a quick heads-up — <strong>you haven't submitted your Week {{ week }} picks yet</strong>, and the deadline is <strong>Saturday at 11:59am ET</strong>.</p>
+<p>Just a quick heads-up — <strong>you haven't submitted your Week {{ week }} picks yet</strong>, and the deadline is <strong>Saturday at noon ET</strong>.</p>
 <p>If you miss the deadline, you'll automatically lose <strong>5,000 points</strong> (and the penalty escalates for each consecutive miss). Don't let it happen!</p>
 
 <a href="{{ picks_url }}" class="cta">📋 Submit My Week {{ week }} Picks Now</a>
