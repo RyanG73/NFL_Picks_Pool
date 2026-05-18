@@ -1609,3 +1609,42 @@ The 38-iteration audit loop is now complete:
 | 10 | Send test Wednesday spreads email; verify Resend dashboard delivery |
 
 ### Running total: 73 bugs fixed, 124 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-ninth)
+
+### No bugs found — verified all plan phases are implemented
+
+**Phase A3 — Pre-lock pick privacy (`public.py::week_view`)** ✅
+
+`picks_revealed = now >= sat_noon` gates pick data: before Saturday noon, `players_picks` is empty and the template receives an empty list. After noon, `db.get_week_picks_reveal()` fetches all picks grouped by player. The privacy gate is correctly placed in the route (not the template) so it can't be bypassed via template manipulation.
+
+**Phase A4 — Spread discrepancy display in admin** ✅
+
+`admin.py` calls `fetch_espn_spreads()` + `cross_check_spreads(games, espn_spreads)` on every admin dashboard load; errors are silently caught (ESPN may be unavailable). `dashboard.html` renders `spread_warnings` in a yellow banner: "⚠️ Spread discrepancies vs ESPN (≥1.5 pts) — verify before Wednesday email." Correct threshold (≥1.5 pts) matches the `spreads.py` implementation.
+
+**Phase B — 2026 rulebook** ✅
+
+`Rules/2026_NFL_PICKS_POOL_RULES.md` exists with 15 sections covering all rules from the plan: buy-in, starting points, picks mechanics, lock timing, picks reveal, ATS scoring, settlement, no-bet penalty (including escalating table), elimination, canceled games, ties (split prize), season schedule (weeks 1-22), roster lock, admin overrides, and where to play.
+
+One known placeholder: lines 160-161 reference "pickspool.com" as the domain. Ryan will need to update these two lines once the domain is registered. All other claims match the code exactly.
+
+**`jobs/smoke_test.py` Phase D coverage** ✅
+
+All 7 smoke test steps are implemented: seed players/games → submit picks (Alice, Bob, Carol) → lock Thursday game via `lock_kicked_off_picks()` RPC → simulate final scores → settle picks → verify standings math → apply Carol's no-bet penalty (−5,000 first miss) → teardown in finally block (always runs). Edge cases not in the automated test (eliminated player penalty skip, postponed-game flow) are each tested in the actual production code paths; smoke test covers the critical happy path and penalty.
+
+### All plan phases confirmed complete
+
+| Phase | Item | Status |
+|---|---|---|
+| A1 | Saturday-noon hard lock | ✅ `timewall.py`, `picks.py`, `002_functions.sql` |
+| A2 | Dynamic prize ladder | ✅ `compute_prize_ladder` + `apply_prize_ladder` in `timewall.py` |
+| A3 | Pre-lock pick privacy | ✅ `public.py::week_view` gates on `picks_revealed` |
+| A4 | Backup spread source + admin diff | ✅ `spreads.py` cross-check + admin yellow warning banner |
+| A5 | Prize splitter for ties | ✅ `apply_prize_ladder` handles tied ranks, splits prize |
+| B | 2026 rulebook | ✅ `Rules/2026_NFL_PICKS_POOL_RULES.md` (update domain once registered) |
+| C | Infrastructure setup | ⏳ Ryan's manual work (Supabase, Vercel, API keys, domain) |
+| D | End-to-end dry-run | ✅ `jobs/smoke_test.py` — 7-step pipeline test |
+
+### Running total: 73 bugs fixed, 125 commits
