@@ -1320,3 +1320,28 @@ All code tasks from the plan are done. Only manual setup remains before Week 1 k
 - All 8 remaining templates — correct; `admin/edit_picks.html` `games(*)` embedding works via `select("*, games(*)")`; `player_profile.html` fields all present in `picks_reveal_v`
 
 ### Running total: 67 bugs fixed, 111 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (twenty-ninth)
+
+### 1 bug fixed (113 commits total)
+
+**Bug 68 — `detect_cancellations.py`: misses ESPN "PPD" and `STATUS_POSTPONED` status codes**
+- The ESPN cancellation check compared only `status.type.shortDetail.upper()` against `("POST", "CANC", "POSTPONED")`. The most common ESPN representation for a postponed game is `shortDetail = "PPD"` (standard sports abbreviation) and `status.type.name = "STATUS_POSTPONED"`. Neither "PPD" nor the authoritative `status.type.name` field was checked, meaning real postponements could be silently missed and Ryan would never get an alert.
+- Fix: check both `status.type.name` against `{"STATUS_POSTPONED", "STATUS_CANCELED", "STATUS_CANCELLED"}` AND `status.type.shortDetail` against an expanded set that includes "PPD", "CANCELED", "CANCELLED". Either match triggers the flag.
+
+### Also verified clean this iteration
+- `api/lib/auth.py` — HTTP Basic with `secrets.compare_digest` (timing-safe); magic token 404/403 paths correct
+- `api/lib/timewall.py` — Saturday-noon logic correct across all week types (playoffs, TNF-only, Super Bowl); `kickoff_time_et` filter handles midnight/noon correctly; `apply_prize_ladder` tie-split works
+- `api/lib/settlement.py` — ATS math correct; `compute_penalty_amount` returns negative (matches DB + `compute_player_week_end_points` expectations); `max(0, ...)` eliminates negative points
+- `api/lib/spreads.py` — spread extraction correct for home-favored and away-favored cases; ESPN matching by team name (intentional, documented)
+- `jobs/send_reminders.py` — correct PostgREST pattern, offseason guard present
+- `jobs/settle_week.py` — favorite/underdog score assignment correct; week 22 Super Bowl guard on week+1 seeding correct; idempotent re-run via existing-settlement check
+- `jobs/smoke_test.py` — teardown cascades correct; lock test correct (Thursday game 3 days past kickoff); settlement math verified
+- `jobs/poll_live_scores.py` — change-detection deduplication correct; one-time NULL→0 write on first poll is harmless
+- `api/main.py` — clean after Bug 59 fix; static mount present
+- `.env.example` — includes `ADMIN_USERNAME`/`ADMIN_PASSWORD` for admin auth; all required vars present
+- `jobs/pull_spreads.py` — week 1 edge case (empty prior standings) handled; `is not None` check for eliminated players (0 pts) correct; idempotent week_log upsert
+
+### Running total: 68 bugs fixed, 113 commits

@@ -34,9 +34,13 @@ def fetch_postponed_games() -> set[tuple[str, str]]:
     resp.raise_for_status()
     events = resp.json().get("events", [])
     flagged: set[tuple[str, str]] = set()
+    _CANCELLED_NAMES   = {"STATUS_POSTPONED", "STATUS_CANCELED", "STATUS_CANCELLED"}
+    _CANCELLED_DETAILS = {"POST", "CANC", "POSTPONED", "PPD", "CANCELED", "CANCELLED"}
     for event in events:
         status_type = event.get("status", {}).get("type", {})
-        if status_type.get("shortDetail", "").upper() not in ("POST", "CANC", "POSTPONED"):
+        type_name   = status_type.get("name", "").upper()
+        short_det   = status_type.get("shortDetail", "").upper()
+        if type_name not in _CANCELLED_NAMES and short_det not in _CANCELLED_DETAILS:
             continue
         comp = event.get("competitions", [{}])[0]
         competitors = {c["homeAway"]: c for c in comp.get("competitors", [])}
