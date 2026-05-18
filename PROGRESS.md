@@ -1392,3 +1392,30 @@ All 69 bugs found and fixed across 30 loop iterations spanning 2026-05-17–18. 
 | 10 | Send test Wed email | `python jobs/pull_spreads.py --season 2026 --week 1` on staging |
 
 ### Running total: 69 bugs fixed, 114 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-first)
+
+### 1 bug fixed (115 commits total)
+
+**Bug 70 — `jobs/pull_spreads.py`: spread discrepancy alert email references non-existent `/admin/games` route**
+- The email body sent to Ryan when Odds API vs ESPN spreads diverge said "Review and edit via /admin/games before Wednesday email goes out." — but there is no `/admin/games` route. The admin spread-correction UI lives at `/admin/` (the main dashboard), where inline spread correction forms appear beneath each game.
+- Fix: changed to "Review and edit via /admin/ before Wednesday email goes out."
+
+### Final plan review — all Phase A items verified complete
+
+- **A1 (Saturday-noon lock):** `is_locked()` in `timewall.py` enforces `min(kickoff, saturday_noon_et(games))`; `picks.py` POST rejects writes for locked/non-scheduled games; SQL function `lock_kicked_off_picks` covers both per-game and noon-based locking ✅
+- **A2 (Dynamic prize scaling):** `compute_prize_ladder(paid_count)` + `apply_prize_ladder(standings, prizes)` in `timewall.py`; admin payout page uses live computed prizes; tie-splitting distributes evenly across tied positions ✅
+- **A3 (Pre-lock pick privacy):** `week_view` computes `picks_revealed = now >= sat_noon`; before Saturday noon, picks data is not fetched and template shows "Picks reveal Saturday at noon ET" ✅
+- **A4 (Backup spread source):** `pull_spreads.py` cross-checks Odds API vs ESPN after each pull; emails Ryan if delta ≥ 1.5 pts; spread warnings shown on admin dashboard ✅
+- **A5 (Prize splitter for ties):** `apply_prize_ladder` handles tied ranks — tied players split sum of their prize slots evenly ✅
+- **Phase B (2026 Rulebook):** `Rules/2026_NFL_PICKS_POOL_RULES.md` committed; 15 sections covering buy-in, scoring, lock timing, bankruptcy, no-bet penalty, cancellations, ties, roster lock, admin overrides ✅
+
+### Smoke test verified complete
+
+`jobs/smoke_test.py` (388 lines) exercises the full pipeline end-to-end: seeds 3 players + 2 games (Thursday + Sunday), submits picks, runs lock, simulates final scores, settles all picks, verifies outcomes (Alice net 0, Bob -2000), applies no-bet penalty to Carol, then tears down all seeded data. Exit code 0 = all pass.
+
+### Running total: 70 bugs fixed, 115 commits
+
+**Codebase audit is fully complete. All plan items implemented. Only Ryan's infrastructure setup remains before Week 1 (Sept 2026).**
