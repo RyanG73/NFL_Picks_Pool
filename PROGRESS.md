@@ -2085,3 +2085,38 @@ Note: these are admin-only endpoints and the dashboard always provides valid pla
 - **Known limitation**: `_transform` always sets `"status": "scheduled"`; `upsert_game` would reset an in-progress game's status on a mid-week re-run. Not a bug in normal operation (pull_spreads runs Wednesday before Thursday kickoff). Admin can correct via `/admin/game/<id>/correct-score` if ever needed.
 
 ### Running total: 77 bugs fixed, 137 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fifty-third)
+
+### No bugs found — all GitHub Actions workflows, vercel.json, detect_cancellations verified
+
+**`vercel.json`** ✅
+
+- Cron paths `/api/cron/lock-and-reveal` and `/api/cron/detect-cancellations` match `api/routes/cron.py` routes exactly:
+  - `main.py:27`: `app.include_router(cron.router, prefix="/api/cron")`
+  - `cron.py:21`: `@router.get("/lock-and-reveal")` → `/api/cron/lock-and-reveal` ✅
+  - `cron.py:40`: `@router.get("/detect-cancellations")` → `/api/cron/detect-cancellations` ✅
+- `*/5 * * * *` for lock-and-reveal (requires Vercel Pro); `0 * * * *` for detect-cancellations. ✅
+
+**All 7 GitHub Actions workflows** ✅
+
+- `cron-pull-spreads.yml`: Two DST-aware cron entries (12 UTC = 8am EDT, 13 UTC = 8am EST); pull_spreads is idempotent so double-fire is safe. ✅
+- `cron-settle-week.yml`: `0 14 * * 2` = Tuesday 14:00 UTC = 10am EDT / 9am EST. Single entry (settle is idempotent). ✅
+- `cron-lock-and-reveal.yml`: `59 17 * * 6` = Saturday 17:59 UTC = 1:59pm EDT / 12:59pm EST — always after noon ET hard lock. ✅
+- `cron-poll-scores.yml`: Covers all game windows (Thu TNF, Sat playoff, Sun, Mon MNF, Fri occasional) via 8 cron entries in both EDT and EST offsets. Each window uses `--once` flag so the GitHub Actions job exits after one poll. ✅
+- `cron-send-reminders.yml`: `0 1 * * 6` = Saturday 1:00 UTC = Friday 8pm (EDT) / 7pm (EST) — after working hours Friday. ✅
+- `cron-detect-cancellations.yml`: `0 * * * *` every hour; no dry-run exposure in workflow_dispatch inputs (minor UX gap, not a bug). ✅
+- `ci-replay-test.yml`: No Supabase secrets needed (correct — reads local CSVs). Replay test gracefully exits 0 when `Historical_Results/Archive_2025/` directory is missing (line 220-224): `return True  # Don't fail CI when archive data isn't committed`. ✅
+
+**`jobs/detect_cancellations.py`** ✅
+
+- Uses ESPN scoreboard URL (no API key needed, same as poll_live_scores). ✅
+- Status detection: checks both `type.name` and `shortDetail` against comprehensive set (`POST`, `CANC`, `POSTPONED`, `PPD`, `CANCELED`, `CANCELLED`). ✅
+- Idempotent: skips games already at `status in ("voided", "postponed")`. ✅
+- Non-destructive: flags as `postponed` only; admin must manually void via dashboard. ✅
+- Admin alert via `send_admin_alert` with admin dashboard URL in body. ✅
+- `ADMIN_EMAIL` fallback: `os.environ.get("ADMIN_EMAIL", os.environ.get("FROM_EMAIL", ""))`. ✅
+
+### Running total: 77 bugs fixed, 138 commits
