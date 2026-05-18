@@ -1803,3 +1803,37 @@ Arithmetic uses banker's rounding (Python `round()`), last position absorbs rema
 - Quick-copy section: monospace list of prize winners, amounts, ranks. ✅
 
 ### Running total: 75 bugs fixed, 130 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-fifth)
+
+### No bugs found — main.py and penalty flow verified end-to-end
+
+**`api/main.py`** ✅
+
+- `load_dotenv()` at module level — loads `.env` for local dev; no-op on Vercel where env vars are set natively.
+- `StaticFiles(directory=os.path.join(BASE_DIR, "static"))` — `BASE_DIR = dirname(__file__)` = `api/`; mounts `api/static/` which exists (`.gitkeep` added in Bug 71 fix). ✅
+- Router prefixes:
+  - `public.router` — no prefix (`/`, `/week/<n>`, `/player/<id>`, `/rules`) ✅
+  - `picks.router` — no prefix (`/p/<token>`) ✅
+  - `admin.router` — prefix `/admin` (`/admin/`, `/admin/player/...`, etc.) ✅
+  - `cron.router` — prefix `/api/cron` — matches `vercel.json` cron paths `/api/cron/lock-and-reveal` and `/api/cron/detect-cancellations` ✅
+- Empty lifespan: correct for current design (no startup/shutdown hooks needed).
+
+**Penalty flow verified end-to-end** ✅
+
+Complete flow across 3 files:
+
+1. **Saturday noon** — `lock_and_reveal.py` calls `db.insert_penalty(player_id, season, week, amount, consecutive)` → inserts row into `penalties` table. Does NOT write to `week_log` (balance not reduced yet).
+
+2. **Tuesday** — `settle_week.py` calls `db.get_penalties(player_id, season)`, filters to current week, passes to `compute_player_week_end_points(start_points, settlements_raw, week_penalties)`.
+   - `settlement.py:78`: `penalty_total = sum(p["amount"] for p in penalties if not p.get("waived"))`
+   - `end_points = max(0, start_points + settled_profit + penalty_total)` (note: `amount` is negative)
+   - `upsert_week_log(player_id, season, week, start_points, end_points)` writes the final balance including penalties.
+
+3. **Admin waiver** — `admin.routes.waive_penalty → db.waive_penalty(penalty_id, reason)` sets `{"waived": True, "waived_reason": reason}`. If called BEFORE Tuesday settlement, the penalty is excluded (`not p.get("waived")`). If called AFTER settlement, balance already reflects the penalty — admin must also call `adjust_points` to correct it. (Documented operational behavior, not a code bug.)
+
+**`db.waive_penalty`** ✅ — sets `waived=True` and `waived_reason`; `settlement.py` checks `p.get("waived")` correctly.
+
+### Running total: 75 bugs fixed, 131 commits
