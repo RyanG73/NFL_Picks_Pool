@@ -778,6 +778,52 @@ All code work is complete. 41 bugs fixed over 68 commits. Infrastructure setup i
 
 ---
 
+## Loop Iteration — 2026-05-17 (twelfth)
+
+### Clean audit pass — no new bugs (80 commits total)
+
+Full deep read of the remaining files not checked in the eleventh iteration:
+
+| File | Status |
+|---|---|
+| `api/routes/cron.py` | ✅ Clean — CRON_SECRET verified, lock RPC called correctly, detect-cancellations is a correct no-op stub |
+| `api/templates/email/reminder.html` | ✅ Clean — all vars passed (player, week, picks_url) |
+| `api/templates/email/base_email.html` | ✅ Clean — footer uses season, app_url, picks_url (default to app_url) |
+| `api/templates/email/magic_link.html` | ✅ Clean — top ~15% (not 25%) |
+| `migrations/002_functions.sql` | ✅ Clean — `lock_kicked_off_picks()` correctly enforces Saturday-noon rule; `settle_game_picks()` ATS logic matches settlement.py |
+| `api/lib/auth.py` | ✅ Clean — timing-safe compare, 401/403 correct |
+| `api/lib/db.py` (full read) | ✅ Clean — all functions use correct patterns; `delete_unlocked_picks_not_in` safely guards empty list |
+| `api/lib/settlement.py` | ✅ Clean — verified by 54/54 replay |
+| `api/lib/spreads.py` | ✅ Clean — spread extraction logic correct; ESPN cross-check non-fatal |
+| `api/templates/picks_form.html` | ✅ Clean — button constants correct, locked pick budget handled |
+| `api/routes/admin.py` (all routes) | ✅ Clean — all mutations audited; `voided_reason` column exists |
+| `jobs/send_reminders.py` | ✅ Clean — game ID prefetch guard in place |
+| `jobs/replay_test.py` | ✅ Clean — graceful skip when archive absent |
+| `.github/workflows/*.yml` (all 6) | ✅ Clean — ADMIN_EMAIL in detect-cancellations, Saturday playoff window in poll-scores |
+| `.env.example` | ✅ Complete — all 9 secrets + 1 variable documented |
+| All 23 Python files | ✅ Syntax clean |
+
+**No additional bugs found.** Running total remains at 45 bugs fixed.
+
+### Summary: what was verified as definitively clean
+
+Every file in the codebase has now been explicitly read and audited across all 12 loop iterations. The full file list and status:
+
+| Category | Count | Status |
+|---|---|---|
+| Python lib (`api/lib/`) | 6 | ✅ All clean |
+| Python routes (`api/routes/`) | 4 | ✅ All clean |
+| Python jobs (`jobs/`) | 7 | ✅ All clean |
+| Jinja2 app templates | 8 | ✅ All clean |
+| Jinja2 email templates | 5 | ✅ All clean |
+| SQL migrations | 4 | ✅ All clean |
+| GitHub Actions workflows | 6 | ✅ All clean |
+| Config files | 4 | ✅ All clean |
+
+**The audit is complete. Infrastructure setup is all that remains.**
+
+---
+
 ## Loop Iteration — 2026-05-17 (eleventh)
 
 ### 2 bugs found and fixed (80 commits total)
