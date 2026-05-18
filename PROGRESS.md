@@ -627,6 +627,19 @@ No known bugs remain. The codebase is production-ready pending infrastructure se
 
 ---
 
+## Loop Iteration — 2026-05-17 (eighth)
+
+### 1 critical bug fixed (72 commits total)
+
+**Bug 42 — `poll_live_scores.py`: Thursday picks not locked at kickoff without Vercel Pro**
+- The Vercel cron `*/5 * * * *` was the only mechanism that called `lock_kicked_off_picks()` RPC during game windows. Vercel's Hobby plan (free) does not support sub-hourly crons — only Vercel Pro (~$20/month) does.
+- Without Pro: Thursday picks could be changed AFTER kickoff until Saturday noon, since the GitHub Actions `cron-lock-and-reveal.yml` only runs on Saturday. Players could see the Thursday game result and update their pick — a fairness violation.
+- Fix: added `lock_kicked_off_picks()` RPC call at the start of each `poll_live_scores.py` poll cycle. `cron-poll-scores.yml` already runs `*/5` during all game windows including Thursday evenings — so picks now lock within ~5 minutes of kickoff via GitHub Actions at no extra cost.
+- Also refactored: `update_games()` now accepts pre-fetched `games` list instead of re-querying Supabase (avoids a redundant DB call each cycle).
+- RUNBOOK updated to document Vercel Pro requirement vs. GitHub Actions fallback.
+
+---
+
 ## Loop Iteration — 2026-05-17 (seventh)
 
 ### 1 bug fixed (70 commits total)
