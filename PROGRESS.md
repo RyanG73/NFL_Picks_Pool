@@ -1419,3 +1419,27 @@ All 69 bugs found and fixed across 30 loop iterations spanning 2026-05-17–18. 
 ### Running total: 70 bugs fixed, 115 commits
 
 **Codebase audit is fully complete. All plan items implemented. Only Ryan's infrastructure setup remains before Week 1 (Sept 2026).**
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-second)
+
+### No bugs found — deep template + route audit
+
+Final deep read of remaining unverified templates and routes:
+
+**`api/templates/leaderboard.html`** — game summary bar, htmx live polling (`hx-trigger="every 60s"`), `is_live` red border styling, prize column all correct.
+
+**`api/templates/fragments/standings_rows.html`** — `rank_display` and `prize` set by `apply_prize_ladder()`; rank medals (🥇🥈🥉) only shown for non-eliminated top 3; `week_profit` coloring correct; `row.is_eliminated` opacity class correct.
+
+**`api/routes/public.py` leaderboard path** — `_compute_live_standings()` includes `paid_buyin` in its dict (needed for `_compute_prizes()`); `picks_reveal_v.game_status` alias used correctly on line 69; `start_by.get(pid, player.get("starting_points", 25_000))` fallback correct.
+
+**`api/templates/picks_form.html`** — `slot_picks = (picks_list + [None, None, None])[:3]` always gives exactly 3 slots; `g.is_locked` set by route before render; `sat_noon_passed` drives footer text; remaining-points JS math correct; `adjustAmount` enforces min 500 via `Math.max(500, cur + delta)`.
+
+**`api/templates/player_profile.html`** — `picks_by_week.items() | sort` sorts by week number (integer key); `pick_team_name` always equals home or away team so "vs" opponent logic is correct; `p.game_status` available from `picks_reveal_v`; 25,000 hardcoded in Season P&L card is correct for 2026 (all players start at 25k).
+
+**`api/templates/base.html`** — nav bar uses `week | default(1)` — all templates that extend it pass `week`; admin templates also extend base.html and admin routes pass `week`.
+
+**`api/lib/db.py` `get_all_players(active_only=True)`** — no route currently sets `is_active = False`, so the player profile route's use of `active_only=True` is safe; `is_active` field is reserved for future manual removal.
+
+### Running total: 70 bugs fixed, 116 commits (loop complete)
