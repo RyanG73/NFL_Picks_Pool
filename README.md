@@ -137,8 +137,8 @@ Smoke test: seeds 3 fake players + 2 games, submits picks, locks, simulates scor
 |---|---|---|
 | Wednesday | 8:00am | Fetch spreads → update DB → send Wed email |
 | Friday | 8:00pm | Reminder to players who haven't picked |
-| Saturday | 11:59am | Apply no-bet penalties → send picks reveal email |
-| Thu/Sun/Mon | Game windows | Poll ESPN every 5 min for live scores |
+| Saturday | ~1pm ET | Apply no-bet penalties → send picks reveal email (fires after noon lock) |
+| Thu/Sat/Sun/Mon | Game windows | Poll ESPN every 5 min for live scores (Sat = playoff weeks) |
 | Tuesday | 9:00am | Settle picks with final scores → advance week_log |
 
 ---
