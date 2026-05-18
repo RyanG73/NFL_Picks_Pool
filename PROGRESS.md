@@ -1488,3 +1488,25 @@ Final deep read of remaining unverified templates and routes:
 - `.env.example` — all 9 required env vars documented with generation hints ✅
 
 ### Running total: 73 bugs fixed, 120 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-fifth)
+
+### No bugs found — final deep library audit
+
+**`api/lib/timewall.py`** — `saturday_noon_et()` correctly uses `weekday() == 6` (Sunday); TNF-only fallback returns `datetime.max` (no-op); `compute_prize_ladder(50)` verified: weights 8..1, total_weight=36, produces $550/$475/$425/$350/$275/$200/$150/$75 = $2,500 matching the rules example; `kickoff_time_et` handles midnight (`0 % 12 or 12 = 12`) and noon (same) correctly ✅
+
+**`api/lib/spreads.py`** — `_extract_spread` home-line ≤ 0 = home favored; `abs(spread_line)` always stores positive; pick-em (0.0 spread) correctly treated as home favorite; ESPN cross-check uses `displayName` match by team pair (home, away) ✅
+
+**`api/lib/email_send.py`** — BCC bulk send pattern (1 API call) for picks_reveal and broadcast; individual-per-player loop for weekly_spreads (personalized picks link); weekly email volume ~70/week = ~280/month well within Resend free 3k/mo limit; `send_picks_reveal` guard `if not players: return` present ✅
+
+**`api/lib/settlement.py`** — `ats_winner` mirrors tuesday.R: `diff > spread` = FAVORITE covers; `diff < spread` = UNDERDOG covers; `diff == spread` = push; `compute_penalty_amount(n) = -5000 * n` matches rulebook; `max(0, ...)` in `compute_player_week_end_points` enforces elimination floor ✅
+
+**`migrations/001_init.sql`** — all 7 tables verified; `standings_v` `week_profit = coalesce(end_points, start_points) - start_points` = 0 pre-settlement, actual P&L post-settlement; `game_pick_totals_v` uses LEFT JOIN (includes games with no picks) ✅
+
+**`migrations/004_games_team_unique.sql`** — adds natural unique constraint `(season, week, home_team, away_team)`; documents `espn_event_id` as Odds API ID (not ESPN ID) ✅
+
+**`admin/dashboard.html`** — `standings | selectattr('player_id', 'eq', player.id) | first` correctly uses Jinja2 `undefined` falsy fallback for new players; `players(name)` embedded PostgREST select (not filter — correct use); `{{ ... | length * 50 }}` parsed as `(length) * 50` in Jinja2 ✅
+
+### Running total: 73 bugs fixed, 121 commits
