@@ -775,6 +775,40 @@ All code work is complete. 41 bugs fixed over 68 commits. Infrastructure setup i
 | `api/templates/leaderboard.html` | ✅ Clean |
 | `api/templates/fragments/standings_rows.html` | ✅ Clean |
 | `api/templates/player_profile.html` | ✅ Clean |
+
+---
+
+## Loop Iteration — 2026-05-17 (tenth)
+
+### Clean audit pass — no new bugs (76 commits total)
+
+**`picks_reveal_v` column-name deep audit**
+
+The view in `migrations/001_init.sql` aliases `g.status` as `game_status` (not `status`). Verified all consumers use the correct column name:
+
+| Location | Usage | Result |
+|---|---|---|
+| `api/lib/db.py:119` | `get_player_picks_history()` — selects `*` via `picks_reveal_v` | ✅ No column aliasing needed (selects all) |
+| `api/lib/db.py:132` | `get_week_picks()` — same pattern | ✅ Clean |
+| `api/routes/public.py:68` | `pick["game_status"] == "in_progress"` in live standings | ✅ Correct column name |
+| `jobs/settle_week.py:159,164` | `pick["game_status"] == "final"` in settlement | ✅ Correct column name |
+| `api/templates/player_profile.html:123` | `{% elif p.game_status == 'in_progress' %}` | ✅ Correct column name |
+
+All 5 consumer locations correctly reference `game_status`, not `status`. The view alias is consistent throughout.
+
+### Status: fully audited, no bugs found
+
+All code paths that consume `picks_reveal_v` are correct. The full codebase audit begun in iteration 7 is now complete with 43 total bugs fixed across all sessions.
+
+### Infrastructure checklist remains (Ryan's work)
+
+1. Register domain → point at Vercel
+2. Create Supabase project → run `001_init.sql`, `002_functions.sql`, `004_games_team_unique.sql`
+3. Create Vercel project → link GitHub repo → set all env vars from `.env.example`
+4. Get API keys: The Odds API + Resend
+5. Set GitHub Secrets (9 secrets + `CURRENT_SEASON=2026` variable)
+6. Add 2026 players via admin dashboard before Week 1
+7. Run `make smoke WEEK=1 SEASON=2026` against staging — go/no-go gate
 | `api/templates/email/base_email.html` | ✅ Clean |
 | `api/templates/email/reminder.html` | ✅ Clean |
 | `api/templates/email/magic_link.html` | ✅ Clean |
