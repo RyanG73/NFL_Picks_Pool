@@ -1740,3 +1740,31 @@ Fix: wrapped the `rpc()` call with `if not dry_run:` guard.
 - Lock RPC integration in polling loop: fires every 60s during game windows — provides per-game lock resilience even on Vercel Hobby plan (where Vercel cron may lag to daily) ✅
 
 ### Running total: 75 bugs fixed, 128 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-third)
+
+### No bugs found — cron.py and admin.py verified
+
+**`api/routes/cron.py`** ✅
+
+- `_verify(authorization)`: only enforces auth when `CRON_SECRET` is set — intentional (allows local dev without secret); production must set it.
+- `lock_picks` endpoint: calls `lock_kicked_off_picks` RPC with `sat_noon` param only when `now >= sat_noon` — mirrors the `poll_live_scores.py` pattern, consistent logic.
+- `detect_cancellations` endpoint: returns no-op placeholder — by design; full cancellation detection requires >10s runtime (GitHub Actions handles it).
+- Style note (not a bug): `from api.lib.db import get_client` appears as a local import inside `lock_picks()`; `db.get_client()` would be equivalent since both resolve the same `@lru_cache`d singleton.
+
+**`api/routes/admin.py`** ✅ (full read — sections 1–8 of 8)
+
+- `add_player`: creates player, seeds current week_log with 25,000, sends magic link, logs action ✅
+- `toggle_paid`: flips `paid_buyin` boolean, logs action ✅
+- `resend_link`: re-sends magic link email, logs action ✅
+- `adjust_points`: reads week_log row, applies `adjustment` to base (`end_points ?? start_points`), writes new `end_points` — same base logic as `pull_spreads.py` seeding ✅
+- `save_pick_override`: no validation (intentional admin bypass), logs override ✅
+- `void_game` / `correct_score` / `correct_spread`: each calls `db.update_game(game_id, **field)` and logs action ✅
+- `waive_penalty`: calls `db.waive_penalty(penalty_id, reason)` (confirmed exists at `db.py:196`), logs action ✅
+- `payout_page`: uses `detect_current_week(SEASON)` as final week (correct post-season — returns max week); merges `paid_buyin` flag into standings for prize computation ✅
+- `send_broadcast_msg`: `banner_text or None` converts empty string → NULL (correct; `get_active_banner` filters `IS NOT NULL`) ✅
+- Module-level `SEASON = int(os.environ.get("CURRENT_SEASON", 2026))` evaluated at import time — correct on Vercel (env vars set before app start) ✅
+
+### Running total: 75 bugs fixed, 129 commits
