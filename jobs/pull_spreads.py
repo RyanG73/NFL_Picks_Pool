@@ -44,7 +44,7 @@ def main(week: int, season: int, dry_run: bool = False):
                     "",
                     *[f"  • {w}" for w in warnings],
                     "",
-                    "Review and edit via /admin/games before Wednesday email goes out.",
+                    "Review and edit via /admin/ before Wednesday email goes out.",
                 ])
                 email_send.send_admin_alert(
                     to=admin_email,
