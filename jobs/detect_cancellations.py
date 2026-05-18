@@ -74,21 +74,19 @@ def main(week: int, season: int, dry_run: bool = False):
             f"  - {g['favorite_team']} vs {g['underdog_team']} ({g['kickoff_at'][:16]})"
             for g in newly_flagged
         )
-        body = f"""
-<p>The following game(s) have been flagged as POSTPONED by ESPN:</p>
-<pre>{game_list}</pre>
-<p>Please review in the <a href="{os.environ.get('APP_URL', '')}/admin/">Admin Dashboard</a>
-and <strong>void</strong> or <strong>restore</strong> each game as appropriate.</p>
-<p>No bets have been settled yet for these games.</p>
-"""
-        import resend
-        resend.api_key = os.environ.get("RESEND_API_KEY", "")
-        resend.Emails.send({
-            "from": os.environ.get("FROM_EMAIL", "picks@example.com"),
-            "to": ADMIN_EMAIL,
-            "subject": f"⚠ {len(newly_flagged)} game(s) postponed — action needed",
-            "html": body,
-        })
+        app_url = os.environ.get("APP_URL", "")
+        body = (
+            f"The following game(s) have been flagged as POSTPONED by ESPN:\n\n"
+            f"{game_list}\n\n"
+            f"Please review in the admin dashboard and void or restore each game:\n"
+            f"{app_url}/admin/\n\n"
+            f"No bets have been settled yet for these games."
+        )
+        email_send.send_admin_alert(
+            to=ADMIN_EMAIL,
+            subject=f"⚠ {len(newly_flagged)} game(s) postponed — action needed",
+            body=body,
+        )
         print(f"  Alert sent to {ADMIN_EMAIL}")
 
 
