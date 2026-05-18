@@ -1466,3 +1466,25 @@ Final deep read of remaining unverified templates and routes:
 - `api/static/css/.gitkeep`: ensures static mount doesn't crash FastAPI (new) ✅
 
 ### Running total: 72 bugs fixed, 118 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirty-fourth)
+
+### 1 bug fixed (120 commits total)
+
+**Bug 73 — Two workflow DST comments wrong or incomplete**
+
+`cron-settle-week.yml` comment read "Tuesday 09:00 ET = Tuesday 14:00 UTC (DST)". But during DST (EDT = UTC-4), 14:00 UTC = 10:00 AM EDT, not 9am — the "(DST)" label pointed to the wrong season. The 9am timing is EST (winter). Fixed to "Tuesday 09:00 EST (winter) / 10:00 EDT (summer) = Tuesday 14:00 UTC".
+
+`cron-send-reminders.yml` comment read "Friday 20:00 ET = Saturday 01:00 UTC" — only accurate for EST. During EDT (UTC-4), 01:00 UTC = Friday 9pm EDT (one hour late). Unlike `pull_spreads.py`, adding a second cron would send duplicate reminder emails — so a single schedule entry is deliberate. Updated comment to document both times and explain why there's only one cron entry.
+
+### Also verified clean this iteration
+
+- `lock_and_reveal.py` — consecutive penalty count correct (counts back from prior week until break); eliminated-player skip uses `start_by_player.get(pid, 25_000) <= 0` with correct default; offseason guard checks `final/voided`; reveal email goes to all active players ✅
+- `send_reminders.py` — PostgREST game-ID prefetch + `.in_()` pattern correct; offseason guard present; `active_only=True` default + redundant `p["is_active"]` filter (harmless) ✅
+- `api/__init__.py`, `api/lib/__init__.py`, `api/routes/__init__.py`, `jobs/__init__.py` — all empty (correct package markers) ✅
+- `Makefile` — all targets correct; `smoke` requires `WEEK=` and `SEASON=` args; `--skip-email` correctly omits Resend calls during CI ✅
+- `.env.example` — all 9 required env vars documented with generation hints ✅
+
+### Running total: 73 bugs fixed, 120 commits
