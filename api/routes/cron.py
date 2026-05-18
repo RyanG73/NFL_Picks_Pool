@@ -20,7 +20,7 @@ def _verify(authorization: str | None):
 
 @router.get("/lock-and-reveal")
 async def lock_picks(authorization: str | None = Header(default=None)):
-    """Runs every minute during game windows — locks picks at kickoff or Saturday noon."""
+    """Runs every 5 minutes — locks picks at kickoff or Saturday noon."""
     _verify(authorization)
     season = int(os.environ.get("CURRENT_SEASON", 2026))
     from api.lib.db import get_client
