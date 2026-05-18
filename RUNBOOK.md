@@ -5,6 +5,19 @@ the admin username/password (HTTP Basic auth at `/admin/`).
 
 ---
 
+## Vercel plan note
+
+The `vercel.json` crons (`*/5 * * * *` lock-and-reveal, hourly detect-cancellations) **require Vercel Pro (~$20/month)**. On the free Hobby plan, these crons silently don't run.
+
+**This is fine** — GitHub Actions handles all the same work for free:
+- `cron-poll-scores.yml` now also locks picks at kickoff every 5 min during game windows.
+- `cron-detect-cancellations.yml` runs hourly.
+- `cron-lock-and-reveal.yml` applies no-bet penalties + sends the reveal email on Saturday.
+
+The Vercel crons are a belt-and-suspenders safety net. On Hobby, GitHub Actions is the primary mechanism and is sufficient.
+
+---
+
 ## Pre-season setup (one-time, ~2 weeks before Week 1)
 
 1. **Run migrations in Supabase SQL Editor** (in order):

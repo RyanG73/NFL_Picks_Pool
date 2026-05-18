@@ -24,7 +24,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import httpx
+from datetime import datetime, timezone
 from api.lib import db
+from api.lib.timewall import saturday_noon_et
 
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 
@@ -65,8 +67,7 @@ def fetch_espn_scores() -> dict[tuple[str, str], dict]:
     return results
 
 
-def update_games(season: int, week: int, scores: dict[tuple[str, str], dict], dry_run: bool):
-    games = db.get_games(season, week)
+def update_games(season: int, week: int, games: list[dict], scores: dict[tuple[str, str], dict], dry_run: bool):
     for game in games:
         if game["status"] in ("voided", "final"):
             continue
@@ -96,8 +97,18 @@ def main(season: int, week: int | None = None, dry_run: bool = False, once: bool
         print(f"[poll_live_scores] season={season} week={week}")
     while True:
         try:
+            games = db.get_games(season, week)
+            now = datetime.now(timezone.utc)
+            sat_noon = saturday_noon_et(games)
+            params: dict = {"as_of": now.isoformat()}
+            if now >= sat_noon:
+                params["sat_noon"] = sat_noon.isoformat()
+            locked = db.get_client().rpc("lock_kicked_off_picks", params).execute()
+            if locked.data:
+                print(f"  Locked {locked.data} pick(s)")
+
             scores = fetch_espn_scores()
-            update_games(season, week, scores, dry_run)
+            update_games(season, week, games, scores, dry_run)
         except Exception as exc:
             print(f"  Error: {exc}")
         if once:
