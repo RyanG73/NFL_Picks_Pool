@@ -2,7 +2,8 @@ name: Fri — Send Pick Reminders
 
 on:
   schedule:
-    # Friday 20:00 ET = Saturday 01:00 UTC
+    # Friday 20:00 EST / 21:00 EDT = Saturday 01:00 UTC
+    # Single entry intentional — two entries would send duplicate reminder emails.
     - cron: '0 1 * * 6'
   workflow_dispatch:
     inputs:

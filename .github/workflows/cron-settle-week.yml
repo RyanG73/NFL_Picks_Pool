@@ -2,7 +2,7 @@ name: Tue — Settle Week
 
 on:
   schedule:
-    # Tuesday 09:00 ET = Tuesday 14:00 UTC (DST)
+    # Tuesday 09:00 EST (winter) / 10:00 EDT (summer) = Tuesday 14:00 UTC
     - cron: '0 14 * * 2'
   workflow_dispatch:
     inputs:
