@@ -57,11 +57,13 @@ def _validate_picks(
         if not game:
             errors.append(f"Unknown game ID {gid}.")
             continue
-        if game["status"] != "scheduled":
-            errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} is already locked or voided.")
+        if game["status"] == "voided":
+            errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} is voided.")
             continue
-        if game_is_locked(game, now, sat_noon):
-            errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} is locked.")
+        if game["status"] != "scheduled" or game_is_locked(game, now, sat_noon):
+            # Game is locked (kicked off or sat-noon wall passed) — the existing DB pick
+            # is preserved as-is; skip this slot silently so the player can still update
+            # other unlocked slots without hitting a "locked" validation error.
             continue
         if side not in ("FAVORITE", "UNDERDOG"):
             errors.append("Invalid pick side.")
@@ -180,9 +182,13 @@ async def submit_picks(
     submitted_game_ids = [gid for gid in game_ids if gid]
     db.delete_unlocked_picks_not_in(player["id"], submitted_game_ids)
 
-    # Write picks (upsert — replaces prior submission for that game)
+    # Write picks (upsert — replaces prior submission for that game).
+    # Skip locked games: their DB picks are already correct and must not be overwritten.
     for gid, side, amount in zip(game_ids, sides, amounts):
         if not gid:
+            continue
+        game = games_by_id.get(gid)
+        if game and (game["status"] == "voided" or game["status"] != "scheduled" or game_is_locked(game, now, sat_noon)):
             continue
         db.upsert_pick(player["id"], gid, side, amount)
         db.log_action("submit_pick", {
