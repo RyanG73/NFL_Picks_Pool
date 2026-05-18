@@ -70,11 +70,13 @@ def check(label: str, condition: bool, detail: str = ""):
 
 def seed_players() -> list[dict]:
     """Insert 3 fake players with unique emails."""
+    global _seeded_player_ids
     run_id = uuid.uuid4().hex[:8]
     players = []
     for i, name in enumerate(["Smoke Alice", "Smoke Bob", "Smoke Carol"]):
         email = f"smoke-{run_id}-{i}@example.invalid"
         row = db.create_player(name=name, email=email)
+        _seeded_player_ids.append(row["id"])  # track for teardown even on partial failure
         players.append(row)
         verbose(f"Seeded player: {name} id={row['id']}")
     return players
@@ -106,6 +108,7 @@ def seed_games(season: int, week: int) -> list[dict]:
             "kickoff_at": kickoff,
             "status": "scheduled",
         }).execute().data[0]
+        _seeded_game_ids.append(row["id"])  # track for teardown even on partial failure
         games.append(row)
         verbose(f"Seeded game: {home} vs {away}  kickoff={kickoff[:16]}")
     return games
@@ -274,13 +277,19 @@ def apply_no_bet_penalty(players: list[dict], season: int, week: int):
 # ── Step 8: Teardown ──────────────────────────────────────────────────────────
 
 def teardown(player_ids: list[str], game_ids: list[str]):
-    """Delete all seeded data (cascades clean up picks/settlements/penalties)."""
+    """Delete all seeded data (cascades clean up picks/settlements/penalties).
+
+    Uses the module-level _seeded_* trackers as the authoritative source so
+    partial-seed failures don't leave orphaned rows in the staging DB.
+    """
+    all_game_ids = list(set(_seeded_game_ids) | set(game_ids))
+    all_player_ids = list(set(_seeded_player_ids) | set(player_ids))
     client = db.get_client()
-    if game_ids:
-        client.table("games").delete().in_("id", game_ids).execute()
-    if player_ids:
-        client.table("players").delete().in_("id", player_ids).execute()
-    verbose(f"Teardown: deleted {len(player_ids)} players, {len(game_ids)} games")
+    if all_game_ids:
+        client.table("games").delete().in_("id", all_game_ids).execute()
+    if all_player_ids:
+        client.table("players").delete().in_("id", all_player_ids).execute()
+    verbose(f"Teardown: deleted {len(all_player_ids)} players, {len(all_game_ids)} games")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
