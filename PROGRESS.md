@@ -1345,3 +1345,50 @@ All code tasks from the plan are done. Only manual setup remains before Week 1 k
 - `jobs/pull_spreads.py` — week 1 edge case (empty prior standings) handled; `is not None` check for eliminated players (0 pts) correct; idempotent week_log upsert
 
 ### Running total: 68 bugs fixed, 113 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (thirtieth)
+
+### 1 bug fixed (114 commits total)
+
+**Bug 69 — `api/templates/rules.html`: hardcoded "2026" in `<title>` tag**
+- Line 2 read `{% block title %}2026 Rules — NFL Picks Pool{% endblock %}`. The `<h1>` on line 6 correctly uses `{{ season }}`, but the browser tab title was hardcoded. In a future season this would display "2026 Rules" even in 2027.
+- Fix: changed to `{% block title %}{{ season }} Rules — NFL Picks Pool{% endblock %}`.
+
+### Final verification pass — all remaining files confirmed clean
+
+**All 7 GitHub Actions workflows** verified:
+- `ci-replay-test.yml` — triggers only on settlement-logic file changes; gracefully skips if Historical_Results/ absent; correct
+- `cron-lock-and-reveal.yml` — `FROM_NAME` present; runs at 17:59 UTC (12:59 PM EST / 1:59 PM EDT, always after noon ET deadline); correct
+- `cron-poll-scores.yml`, `cron-settle-week.yml` — no email sends, no `FROM_NAME` needed; correct
+- `cron-send-reminders.yml`, `cron-detect-cancellations.yml`, `cron-pull-spreads.yml` — all have correct `FROM_NAME`; correct (post Bug 64/65 fixes)
+
+**Python syntax check**: `find . -name "*.py" | xargs python -m py_compile` — all files pass, no syntax errors anywhere in the codebase.
+
+**`jobs/replay_test.py`** — score lookup uses `home_score`/`away_score` fields; home/away vs fav/dog ordering handled correctly via team-name matching; archive-not-found guard returns `True` so CI passes gracefully without Historical_Results/ data.
+
+**`migrations/003_seed_example.sql`** — dev/staging seed only; `ON CONFLICT DO NOTHING` idempotent; includes `starting_points` column (exists on `players` table); correct.
+
+**`README.md`** — setup instructions accurate; Vercel Pro note for sub-minute crons correct; weekly timeline correct.
+
+### Codebase audit complete
+
+All 69 bugs found and fixed across 30 loop iterations spanning 2026-05-17–18. Every Python file, SQL migration, Jinja2 template, GitHub Actions workflow, and configuration file has been reviewed.
+
+**Only Ryan's infrastructure setup remains before Week 1 kickoff (Sept 2026):**
+
+| # | Item | Notes |
+|---|---|---|
+| 1 | Register domain | ~$12, point at Vercel after deploy |
+| 2 | Create Supabase project | Run migrations 001+002+004; skip 003 in prod |
+| 3 | Create Vercel project | Link GitHub; set env vars from `.env.example` |
+| 4 | Get API keys | The Odds API (free 500 req/mo), Resend (free 3k/mo) |
+| 5 | Set GitHub Secrets | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `ODDS_API_KEY`, `FROM_EMAIL`, `FROM_NAME`, `APP_URL`, `ADMIN_EMAIL`, `CRON_SECRET` + Variable: `CURRENT_SEASON=2026` |
+| 6 | Add 2026 players | Admin dashboard before Week 1 kickoff |
+| 7 | Run smoke test | `make smoke WEEK=1 SEASON=2026` against staging |
+| 8 | Verify cron jobs | `workflow_dispatch` each with `--dry-run` in GitHub Actions |
+| 9 | Send test magic link | Add yourself as player, receive email, submit picks |
+| 10 | Send test Wed email | `python jobs/pull_spreads.py --season 2026 --week 1` on staging |
+
+### Running total: 69 bugs fixed, 114 commits
