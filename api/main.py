@@ -4,10 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 from api.routes import public, picks, admin, cron
 
@@ -22,8 +20,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="NFL Picks Pool", lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 app.include_router(public.router)
 app.include_router(picks.router)
