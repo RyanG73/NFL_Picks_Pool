@@ -1677,3 +1677,32 @@ Never audited in prior iterations — verified clean now:
 - `--dry-run` gates both DB write and email correctly.
 
 ### Running total: 73 bugs fixed, 126 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-first)
+
+### 1 bug fixed — README GitHub Secrets list included CRON_SECRET incorrectly
+
+**Bug 74 — `CRON_SECRET` incorrectly listed as a GitHub Secret**
+
+`CRON_SECRET` is used only in `api/routes/cron.py:17` to authenticate Vercel's cron scheduler requests (`Authorization: Bearer <secret>`). It is never referenced in any of the 7 GitHub Actions workflows. The README listed it alongside the 8 workflow secrets (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, etc.), which would cause Ryan to add it to GitHub Secrets unnecessarily.
+
+Fix: removed `CRON_SECRET` from the GitHub Secrets list; added a clarifying note: "used only by Vercel cron endpoints — add to Vercel environment variables, not GitHub Secrets."
+
+### Also verified clean this iteration
+
+**README.md** — Full read and consistency check:
+- Setup checklist covers all 6 steps (accounts → Supabase migrations → env vars → Vercel → GitHub Secrets → first kickoff) ✅
+- Local dev commands (`make install`, `make dev`, `make replay`, `make smoke`) correct ✅
+- Job manual-run commands all have correct flag names verified against argparse definitions ✅
+- `replay_test.py --show-diffs` flag exists ✅
+- Vercel Pro cron note accurate (5-min cron requires Pro plan; Hobby fallback = GH Actions `cron-lock-and-reveal.yml`) ✅
+- Weekly timeline table accurate ✅
+- Rules quick-reference accurate ✅
+
+**`.gitignore`** — covers `.env`, pycache, `.venv`, Historical_*, `Rules/*.pdf`, `Rules/*.docx`, `/*.html`, `*_files/`, `.claude/`. `CLAUDE.md` and `Rules/2026_NFL_PICKS_POOL_RULES.md` are correctly NOT excluded (they should be committed). ✅
+
+**`.env.example` vs workflow secrets cross-check**: all 8 workflow secrets (`ADMIN_EMAIL`, `APP_URL`, `FROM_EMAIL`, `FROM_NAME`, `ODDS_API_KEY`, `RESEND_API_KEY`, `SUPABASE_SERVICE_KEY`, `SUPABASE_URL`) have corresponding entries in `.env.example`. `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `CRON_SECRET`, `CURRENT_SEASON` are Vercel-only / documented separately. ✅
+
+### Running total: 74 bugs fixed, 127 commits
