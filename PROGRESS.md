@@ -1837,3 +1837,34 @@ Complete flow across 3 files:
 **`db.waive_penalty`** ✅ — sets `waived=True` and `waived_reason`; `settlement.py` checks `p.get("waived")` correctly.
 
 ### Running total: 75 bugs fixed, 131 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-sixth)
+
+### No bugs found — SQL views, email template guard, live standings verified
+
+**`standings_v` SQL view** ✅
+
+- `current_points = coalesce(end_points, start_points)` — pre-settlement shows start_points (week_profit = 0); post-settlement shows actual balance. ✅
+- `is_eliminated = coalesce(end_points, start_points) <= 0` — eliminated when balance ≤ 0. ✅
+- `JOIN week_log` (not LEFT JOIN) — players without week_log rows don't appear; acceptable because `pull_spreads.py` seeds week_log for all active players each Wednesday, and `add_player` seeds immediately on creation. ✅
+- `order by current_points DESC` inside the view is decorative (PostgreSQL ignores view ORDER BY); the Python query's `.order("current_points", desc=True)` is what matters. ✅
+
+**`email/weekly_spreads.html` Week 1 guard** ✅
+
+Line 34: `{% if standings %}` correctly hides the "Last Week's Standings" section when `standings=[]` (the Week 1 case, where `pull_spreads.py` passes `standings=db.get_standings(season, week-1) if week > 1 else []`). The email renders only the games/spreads section, with no missing-standings errors.
+
+**`_compute_live_standings` in `public.py`** ✅ (full read)
+
+- Fast path: `not has_active → db.get_standings(season, week)` (static view; no picks query needed). ✅
+- Active path: queries `picks_reveal_v`, which aliases `g.status` as `game_status` at SQL line 144; Python uses `pick["game_status"]` — correct. ✅
+- `left join settlements` in `picks_reveal_v` → unsettled picks have `result=NULL`; Python `if pick.get("result") is not None:` handles this correctly. ✅
+- Fallback for missing week_log: `start_by.get(pid, player.get("starting_points", 25_000))` — handles new players without a week_log row. ✅
+- `current = max(0, start + profit)` — 0-floor applied even in live view. ✅
+
+**`picks_reveal_v` SQL view** ✅
+
+- `g.status as game_status`, `case pk.pick_side when 'FAVORITE' then g.favorite_team else g.underdog_team end as pick_team_name` — confirmed correct for both the live standings route and the week_view page. ✅
+
+### Running total: 75 bugs fixed, 132 commits
