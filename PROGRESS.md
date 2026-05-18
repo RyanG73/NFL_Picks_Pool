@@ -946,6 +946,26 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (twenty-third)
+
+### 1 doc bug fixed (99 commits total)
+
+**Bug 55 — `api/routes/cron.py`: docstring said "every minute", schedule is every 5 minutes**
+- The `lock_picks` endpoint comment read "Runs every minute during game windows" but `vercel.json` schedules it as `*/5 * * * *` (every 5 minutes). A reader could interpret this as 1-minute precision and be surprised by the 5-minute locking window, or might "correct" the cron schedule to `* * * * *` (every minute) which would hit Vercel's invocation limits.
+- Fix: corrected comment to "Runs every 5 minutes".
+
+### Also verified clean this iteration
+- All env vars in code match `.env.example` exactly — 12 vars, all documented, none missing
+- GitHub Actions workflow secrets match `.env.example` — 9 secrets + 1 variable
+- `lock_kicked_off_picks()` SQL function: correct sat_noon handling for Thursday-only weeks (returns `datetime.max` → condition never triggers → no spurious Saturday lock)
+- `apply_prize_ladder()`: dollar-amount parsing handles comma-formatted values correctly (`$1,250` → int correctly)
+- `saturday_noon_et()`: TNF-only weeks return `datetime.max` with UTC tzinfo — safe in all comparisons
+- Memory files updated: `MEMORY.md` and `project_build_status.md` now reflect 54 bugs fixed and complete audit
+
+### Running total: 55 bugs fixed, 99 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (twenty-second)
 
 ### Clean verification pass — no new bugs (97 commits total)
