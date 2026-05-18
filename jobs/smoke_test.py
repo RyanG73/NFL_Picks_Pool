@@ -13,13 +13,13 @@ Usage:
 
 What it tests (in order):
   1. Seed: insert 3 fake players + 2 fake games for the week
-  2. Submit picks: upsert picks for all players (including invalid to test validation)
-  3. Saturday-noon lock: lock all picks via lock_kicked_off_picks() RPC
-  4. Live scores: simulate poll_live_scores by writing fake in_progress scores
-  5. Settle: settle all picks via settle_week.py logic
-  6. Standings: verify final standings match expected outcome
-  7. No-bet penalty: apply penalty to player who skipped picks
-  8. Teardown: delete all seeded rows (keeps staging clean)
+  2. Submit picks: upsert picks for all players
+  3. Lock: lock picks via lock_kicked_off_picks() RPC (Thursday game past kickoff)
+  4. Final scores: write fake final scores with definite ATS outcomes
+  5. Settle: settle all picks via settlement logic
+  6. Verify: check each player's net profit matches expected outcome
+  7. No-bet penalty: apply -5000 penalty to Carol (skipped picks)
+  Teardown: delete all seeded rows (runs in finally block, always executes)
 
 All steps print PASS/FAIL. Final exit code is 0 if all pass, 1 if any fail.
 """
@@ -350,9 +350,10 @@ def main(season: int, week: int, skip_email: bool = False, verbose_mode: bool = 
         apply_no_bet_penalty(players, season, week)
 
     except Exception as exc:
+        global _fail_count
         log(f"\n  💥 Unexpected error: {exc}")
         import traceback; traceback.print_exc()
-        _fail_count_local = 1  # noqa — counted via global
+        _fail_count += 1
     finally:
         log("\n[Teardown] Cleaning up seeded data...")
         teardown([p["id"] for p in players], [g["id"] for g in games])
