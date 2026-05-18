@@ -946,6 +946,29 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (twenty-fifth)
+
+### 2 bugs fixed + 1 cleanup (106 commits total)
+
+**Bug 58 — `picks.py`: Thursday pick blocks Sunday updates (CRITICAL UX)**
+- If a player picked a Thursday game before kickoff, the form pre-populated slot 1 with the locked game as a `disabled selected` HTML option. When they tried to update Sunday picks (before Saturday noon), the form submission included the locked game_id. `_validate_picks` rejected it with "Game X is locked" — blocking the entire submission.
+- Fix part 1: changed `_validate_picks` to silently `continue` on locked/non-scheduled games (skip without error). The existing DB pick is preserved as-is. Only unlocked slots count toward total and validation.
+- Fix part 2: changed the upsert loop in `submit_picks` to skip locked games, preventing a player from manipulating the amount field of a pre-populated locked slot to change a bet amount after kickoff (security boundary).
+
+**Bug 59 — `main.py`: dead `templates` variable and unused imports**
+- `main.py` created a `Jinja2Templates` instance that was never used (each route module creates its own). Also imported `Request` and `HTMLResponse` without using them.
+- Fix: removed the dead templates instance and cleaned up unused imports.
+
+### Also verified clean this iteration
+- `auth.py`: `secrets.compare_digest` timing-safe comparison ✅; 401 with `WWW-Authenticate` header ✅; `validate_magic_token` 404/403 split ✅
+- `public.py`: live standings logic correct (settled=actual, in_progress=implied ATS, scheduled=0) ✅; `picks_revealed` gate correct for all weeks with Sunday games ✅; prize computation path ✅
+- `picks.py` balance math: `effective_available = available - locked_amount` correctly deducts locked picks before validating new submissions ✅
+- `_RULES_PATH` hardcoded to 2026 — acceptable for single-season v1 design ✅
+
+### Running total: 59 bugs fixed, 106 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (twenty-fourth)
 
 ### 2 bugs fixed (102 commits total)
