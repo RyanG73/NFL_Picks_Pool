@@ -2,9 +2,11 @@ name: Wed — Pull Spreads & Send Email
 
 on:
   schedule:
-    # Wednesday 08:00 ET = 13:00 UTC (during DST) / 12:00 UTC (non-DST)
-    # Running at both to handle DST transition; pull_spreads is idempotent
-    - cron: '0 13 * * 3'
+    # Wednesday 08:00 ET — runs at both UTC offsets to cover DST transition:
+    #   08:00 EDT (Mar–Nov) = 12:00 UTC | 08:00 EST (Nov–Mar) = 13:00 UTC
+    # pull_spreads is idempotent so firing twice in the same week is safe.
+    - cron: '0 12 * * 3'   # EDT (summer regular season)
+    - cron: '0 13 * * 3'   # EST (winter/playoffs)
   workflow_dispatch:
     inputs:
       week:

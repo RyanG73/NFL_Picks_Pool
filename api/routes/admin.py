@@ -1,6 +1,7 @@
 import os
 import secrets
 from datetime import datetime, timezone
+from urllib.parse import quote_plus
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -13,6 +14,7 @@ from api.lib.spreads import fetch_espn_spreads, cross_check_spreads
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 templates.env.filters["kickoff_et"] = kickoff_time_et
+templates.env.filters["urlencode"] = quote_plus
 SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 
 
@@ -108,7 +110,8 @@ async def adjust_points(
     if not rows:
         return RedirectResponse("/admin/?error=week_log_not_found", status_code=303)
     row = rows[0]
-    new_end = (row["end_points"] or row["start_points"]) + adjustment
+    base = row["end_points"] if row["end_points"] is not None else row["start_points"]
+    new_end = base + adjustment
     get_client().table("week_log").update({"end_points": new_end}).eq("id", row["id"]).execute()
     db.log_action("adjust_points", {
         "player_id": player_id, "week": week,
