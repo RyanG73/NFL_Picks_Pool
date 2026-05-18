@@ -154,28 +154,24 @@
     recalcRemaining();
   }
 
+  const BASE_BTN  = 'flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors';
+  const FAV_ACTIVE = BASE_BTN + ' bg-blue-600 text-white border-blue-600';
+  const DOG_ACTIVE = BASE_BTN + ' bg-orange-500 text-white border-orange-500';
+  const FAV_IDLE   = BASE_BTN + ' border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-700';
+  const DOG_IDLE   = BASE_BTN + ' border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-700';
+
   function setSide(slot, side) {
     document.getElementById('side_' + slot).value = side;
-    const favBtn = document.getElementById('btn-fav-' + slot);
-    const dogBtn = document.getElementById('btn-dog-' + slot);
-    favBtn.className = favBtn.className.replace(/bg-\S+|text-\S+|border-\S+/g, '');
-    dogBtn.className = dogBtn.className.replace(/bg-\S+|text-\S+|border-\S+/g, '');
-    if (side === 'FAVORITE') {
-      favBtn.classList.add('bg-blue-600','text-white','border-blue-600');
-      dogBtn.classList.add('border-gray-300','text-gray-500');
-    } else {
-      dogBtn.classList.add('bg-orange-500','text-white','border-orange-500');
-      favBtn.classList.add('border-gray-300','text-gray-500');
-    }
+    document.getElementById('btn-fav-' + slot).className = side === 'FAVORITE' ? FAV_ACTIVE : FAV_IDLE;
+    document.getElementById('btn-dog-' + slot).className = side === 'UNDERDOG' ? DOG_ACTIVE : DOG_IDLE;
   }
 
   function updateSideButtons(slot) {
-    // Reset side when game changes
     document.getElementById('side_' + slot).value = '';
     const favBtn = document.getElementById('btn-fav-' + slot);
     const dogBtn = document.getElementById('btn-dog-' + slot);
-    if (favBtn) favBtn.className = 'flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-700';
-    if (dogBtn) dogBtn.className = 'flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-700';
+    if (favBtn) favBtn.className = FAV_IDLE;
+    if (dogBtn) dogBtn.className = DOG_IDLE;
     recalcRemaining();
   }
 
