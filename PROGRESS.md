@@ -946,6 +946,23 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (seventeenth)
+
+### 2 bugs fixed (89 commits total)
+
+**Bug 49 — `standings_rows.html`: medal emojis use loop.index, not rank_display (tie bug)**
+- Medal assignment used `loop.index <= 3` to show 🥇🥈🥉 for the first three rows. With a 3-way tie at 1st place, `apply_prize_ladder` correctly sets `rank_display = "T1"` for all three, but the template showed them as 🥇🥈🥉 (gold/silver/bronze) instead of all 🥇 or all "T1".
+- Fix: use `row.rank_display` (always set by `apply_prize_ladder` on both the full leaderboard route and the htmx fragment route). Show medal only when `rank_display` is exactly "1", "2", or "3" — tied positions ("T1", "T2"…) display as text.
+
+**Bug 50 — `week_view.html`: all-push player shows '—' in Net column (looks like no picks)**
+- Net column used `if pp.total_net_profit` (truthiness) — evaluates to `False` for 0, so all-push players showed `'—'` identical to an empty cell, making them look like they had no picks.
+- `total_net_profit = 0` always means the player picked and all their picks pushed (no-pick players don't appear in `picks_reveal_v` at all).
+- Fix: use `if pp.total_net_profit is not none` so 0 renders as "0" (gray) and only `None` renders as '—'.
+
+### Running total: 50 bugs fixed, 89 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (sixteenth)
 
 ### 1 bug fixed (87 commits total)
