@@ -946,6 +946,28 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (twenty-fourth)
+
+### 2 bugs fixed (102 commits total)
+
+**Bug 56 — `db.upsert_week_log`: passing `end_points=None` overwrites settled values**
+- The function signature defaults `end_points=None` and always included `"end_points": end_points` in the upsert payload. PostgREST upsert updates ALL specified columns — including setting `end_points=NULL` when the caller only wanted to set `start_points`. If `pull_spreads.py` or `admin.py` were run after `settle_week.py` had already written `end_points` for that week, the settled value would be silently overwritten.
+- Fix: only include `"end_points"` in the payload when it's not `None`. All callers that only seed `start_points` (pull_spreads.py, admin.py, settle_week.py's next-week seeding) now correctly leave existing `end_points` intact.
+
+**Bug 57 — `detect_cancellations.py`: raw `FROM_EMAIL` used instead of shared `send_admin_alert`**
+- The alert email used a bare `import resend` inside the function and `os.environ.get("FROM_EMAIL")` directly, bypassing the `email_send` module. Result: postponement alert emails arrived as "picks@yourdomain.com" instead of "NFL Picks Pool <picks@yourdomain.com>". The `email_send` module's `send_admin_alert()` already handles this correctly.
+- Fix: replaced direct resend calls with `email_send.send_admin_alert()` and converted the body to plain text (works with the `<pre>` wrapper in send_admin_alert).
+
+### Also verified clean this iteration
+- `pull_spreads.py`: ESPN cross-check correctly handles early-week (no odds posted yet) — returns empty dict, prints "0 games checked", non-fatal
+- `poll_live_scores.py`: `lock_kicked_off_picks` RPC called correctly; `locked.data` truthiness check works for 0 vs >0 return
+- `admin.py`: `send_magic_link(player)` correctly falls back to `CURRENT_SEASON` env var when `season=0`; all pick/game/penalty admin routes reviewed — correct
+- `detect_current_week()` returns week 1 as fallback when no games in DB — safe for fresh Supabase projects before first `pull_spreads.py` run
+
+### Running total: 57 bugs fixed, 102 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (twenty-third)
 
 ### 1 doc bug fixed (99 commits total)
