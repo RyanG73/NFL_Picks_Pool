@@ -1768,3 +1768,38 @@ Fix: wrapped the `rpc()` call with `if not dry_run:` guard.
 - Module-level `SEASON = int(os.environ.get("CURRENT_SEASON", 2026))` evaluated at import time — correct on Vercel (env vars set before app start) ✅
 
 ### Running total: 75 bugs fixed, 129 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (forty-fourth)
+
+### No bugs found — prize ladder math verified, payout template verified
+
+**Prize ladder math (all player counts)** ✅
+
+Ran `compute_prize_ladder` for n ∈ {1, 2, 5, 7, 10, 20, 50, 67}:
+
+| n | pot | winners | sum == pot |
+|---|---|---|---|
+| 1 | $50 | 1 | ✅ |
+| 2 | $100 | 1 | ✅ |
+| 5 | $250 | 1 | ✅ |
+| 7 | $350 | 1 | ✅ |
+| 10 | $500 | 2 | ✅ |
+| 20 | $1,000 | 3 | ✅ |
+| 50 | $2,500 | 8 (`$550/$475/$425/$350/$275/$200/$150/$75`) | ✅ |
+| 67 | $3,350 | 10 | ✅ |
+
+Arithmetic uses banker's rounding (Python `round()`), last position absorbs remainder. Sum exactly matches pot for all tested counts. Small pools (n<10) correctly produce 1 winner taking the full pot.
+
+**`admin/payout.html`** ✅
+
+- Prize ladder chips (blue): `{{ loop.index }}. {{ p }}` for each prize. ✅
+- Payout table: rank_display, player name (linked), final_points, season P&L vs 25,000 baseline, prize pill (green), paid_buyin badge, Venmo link. ✅
+- Venmo link: `https://venmo.com/{{ row.name | urlencode }}?txn=pay&amount={{ row.prize | replace('$','') | replace(',','') }}&note=...` — `urlencode` filter registered in `admin.py:17`; `replace(',','')` strips thousand-separator from prize (e.g., `$1,000 → 1000`). ✅ (Venmo link is a convenience — Ryan selects correct recipient in app)
+- Season P&L hardcoded to 25,000 baseline: all 2026 players start at 25,000, so `current_points - 25000` is correct. ✅
+- `row.paid_buyin` merged into standings in `admin.py:222-224`; template uses it for "✓ Paid" / "⚠ Unpaid" badge. ✅
+- Payout checklist: 5 steps (verify paid, check settlement, send Venmo, broadcast final email, archive). ✅
+- Quick-copy section: monospace list of prize winners, amounts, ranks. ✅
+
+### Running total: 75 bugs fixed, 130 commits
