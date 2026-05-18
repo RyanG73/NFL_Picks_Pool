@@ -25,9 +25,14 @@ def main(week: int, season: int, dry_run: bool = False):
     players = db.get_all_players()
 
     from api.lib.db import get_client
-    games_this_week = {g["id"] for g in db.get_games(season, week)}
+    games_list = db.get_games(season, week)
+    games_this_week = {g["id"] for g in games_list}
     if not games_this_week:
         print(f"  No games found for week {week} season {season} — nothing to do.")
+        return
+    # Skip if the week has already fully settled (offseason re-run guard)
+    if all(g["status"] in ("final", "voided") for g in games_list):
+        print(f"  Week {week} games are all final/voided — reveal already sent. Skipping.")
         return
 
     all_picks = (
