@@ -26,6 +26,10 @@ def main(week: int, season: int, dry_run: bool = False):
 
     from api.lib.db import get_client
     games_this_week = {g["id"] for g in db.get_games(season, week)}
+    if not games_this_week:
+        print(f"  No games found for week {week} season {season} — nothing to do.")
+        return
+
     all_picks = (
         get_client()
         .table("picks")
