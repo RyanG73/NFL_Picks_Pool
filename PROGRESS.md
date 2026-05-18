@@ -946,6 +946,29 @@ All 44+ source files have been read and audited across 13 loop iterations. Runni
 
 ---
 
+## Loop Iteration — 2026-05-18 (fifteenth)
+
+### 2 doc bugs fixed (85 commits total)
+
+**Bug 46 — `migrations/004_games_team_unique.sql`: comment said "Run after 003"**
+- The comment read "Run after 001_init.sql, 002_functions.sql, 003_seed_example.sql" — but 003 is the dev seed and is explicitly skipped in production. Ryan would read this before running migrations and could mistakenly run 003 in prod (seeding fake players/games into the live database).
+- Fix: corrected to "Run after 001_init.sql and 002_functions.sql (skip 003_seed_example.sql in prod)".
+
+**Bug 47 — `RUNBOOK.md`: Saturday time and polling days inconsistent with README**
+- RUNBOOK's weekly operations table still showed "11:59am" for the Saturday lock job (README was corrected in iteration 13 but RUNBOOK was missed). Also showed "Thu/Sun/Mon" for game polling without the Saturday playoff window.
+- Fix: corrected to "~1pm ET" and "Thu/Sat/Sun/Mon (Sat = playoff weeks)" to match README.
+
+### Also verified clean this iteration
+- All 8 prize amounts in Rules example for 50 players match `compute_prize_ladder(50)` exactly ($550/$475/$425/$350/$275/$200/$150/$75, total $2,500)
+- `vercel.json` routes and crons correct (static files route, all-catch route, two cron paths)
+- All 4 migrations' SQL is correct and self-consistent
+- RUNBOOK.md all other scenarios correct (spread fix, score fix, magic link, cancellations, waive, edit picks, elimination, payout)
+- Rules document accurate on all 15 sections
+
+### Running total: 47 bugs fixed, 85 commits
+
+---
+
 ## Loop Iteration — 2026-05-18 (fourteenth)
 
 ### Final verification pass — all clean (83 commits total)
