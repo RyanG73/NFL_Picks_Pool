@@ -178,11 +178,10 @@ def get_week_log(player_id: str, season: int) -> list[dict]:
     )
 
 def upsert_week_log(player_id: str, season: int, week: int, start_points: int, end_points: int | None = None):
-    get_client().table("week_log").upsert(
-        {"player_id": player_id, "season": season, "week": week,
-         "start_points": start_points, "end_points": end_points},
-        on_conflict="player_id,season,week",
-    ).execute()
+    data: dict = {"player_id": player_id, "season": season, "week": week, "start_points": start_points}
+    if end_points is not None:
+        data["end_points"] = end_points
+    get_client().table("week_log").upsert(data, on_conflict="player_id,season,week").execute()
 
 
 # ── Penalties ──────────────────────────────────────────────────────────────
