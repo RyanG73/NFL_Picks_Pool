@@ -1268,3 +1268,23 @@ All code tasks from the plan are done. Only manual setup remains before Week 1 k
 | 8 | Verify cron jobs | `workflow_dispatch` each workflow manually in GitHub Actions to confirm auth + DB connection |
 | 9 | Send test magic link | Add yourself as a player, receive email, submit picks, verify form |
 | 10 | Send test Wed email | `python jobs/pull_spreads.py --season 2026 --week 1` against staging spreads |
+
+---
+
+## Loop Iteration — 2026-05-18 (twenty-seventh)
+
+### 3 bugs fixed (109 commits total)
+
+**Bug 62 — `api/templates/email/picks_reveal.html`: "Week 23 spreads" shown after Super Bowl**
+- Line 19 read `Week {{ week + 1 }} spreads will arrive Wednesday` unconditionally. Week 22 is the Super Bowl — there is no Week 23.
+- Fix: wrapped in `{% if week < 22 %}...{% else %}Final standings will be settled Tuesday — thanks for playing!{% endif %}` to handle the season-end case.
+
+**Bug 63 — `api/routes/public.py` `rules_page`: missing `week` and `banner` context vars**
+- The rules route returned a template response with only `request`, `raw_md`, and `season`. The nav bar uses `week` to build the "This Week" link (`/week/{{ week }}`) — without it every nav link would fall back to `/week/` (broken URL). The banner block was also silently suppressed.
+- Fix: added `"week": _current_week()` and `"banner": db.get_active_banner()` to the response dict.
+
+**Picks validation refinement — voided games caused spurious form errors**
+- After Bug 58's fix (skip locked games silently), voided games were left as a separate error path (`errors.append(f"Unknown or voided game {gid}")`). But a voided game behaves identically to a locked one: its DB pick is preserved and the player has no action to take. Showing an error blocks updating other unlocked slots for no reason.
+- Fix: collapsed all non-actionable states (non-scheduled status + locked) into a single silent `continue`. Voided, postponed, cancelled, in-progress, and locked games are all skipped without error.
+
+### Running total: 63 bugs fixed, 109 commits

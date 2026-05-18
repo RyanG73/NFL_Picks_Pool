@@ -57,13 +57,10 @@ def _validate_picks(
         if not game:
             errors.append(f"Unknown game ID {gid}.")
             continue
-        if game["status"] == "voided":
-            errors.append(f"Game {game['favorite_team']} vs {game['underdog_team']} is voided.")
-            continue
         if game["status"] != "scheduled" or game_is_locked(game, now, sat_noon):
-            # Game is locked (kicked off or sat-noon wall passed) — the existing DB pick
-            # is preserved as-is; skip this slot silently so the player can still update
-            # other unlocked slots without hitting a "locked" validation error.
+            # Game is locked, voided, or postponed — the existing DB pick is preserved
+            # as-is; skip this slot silently so the player can still update other
+            # unlocked slots without hitting a spurious validation error.
             continue
         if side not in ("FAVORITE", "UNDERDOG"):
             errors.append("Invalid pick side.")

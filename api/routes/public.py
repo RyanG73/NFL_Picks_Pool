@@ -250,4 +250,6 @@ async def rules_page(request: Request):
         "request": request,
         "raw_md": raw_md,
         "season": SEASON,
+        "week": _current_week(),
+        "banner": db.get_active_banner(),
     })
