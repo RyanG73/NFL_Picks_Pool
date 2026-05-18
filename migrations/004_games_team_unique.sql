@@ -6,7 +6,7 @@
 -- This migration adds a proper team-pair uniqueness constraint and documents
 -- the espn_event_id purpose.
 --
--- Run after 001_init.sql, 002_functions.sql, 003_seed_example.sql
+-- Run after 001_init.sql and 002_functions.sql (skip 003_seed_example.sql in prod)
 
 -- Add unique constraint on team names per week (the natural game identity)
 alter table games
