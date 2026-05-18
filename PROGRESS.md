@@ -1288,3 +1288,35 @@ All code tasks from the plan are done. Only manual setup remains before Week 1 k
 - Fix: collapsed all non-actionable states (non-scheduled status + locked) into a single silent `continue`. Voided, postponed, cancelled, in-progress, and locked games are all skipped without error.
 
 ### Running total: 63 bugs fixed, 109 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (twenty-eighth)
+
+### 4 bugs fixed (111 commits total)
+
+**Bug 64 — `cron-detect-cancellations.yml`: missing `FROM_NAME` secret**
+- The cancellation alert email is sent via `email_send.send_admin_alert()`, which reads `FROM_NAME` from env to build the `From:` display name. The workflow had `FROM_EMAIL` but not `FROM_NAME`, so all cancellation alerts would arrive with the hardcoded default "NFL Picks Pool" even if Ryan configured a custom sender name.
+- Fix: added `FROM_NAME: ${{ secrets.FROM_NAME }}` to the workflow env block.
+
+**Bug 65 — `cron-pull-spreads.yml`: DST comment backwards + missing second schedule entry**
+- The comment read "08:00 ET = 13:00 UTC (during DST) / 12:00 UTC (non-DST)" — but during DST (EDT = UTC-4), 08:00 EDT = 12:00 UTC; during non-DST (EST = UTC-5), 08:00 EST = 13:00 UTC. The labels were swapped. Worse, the comment said "Running at both" (implying two cron entries) but only the EST entry (`0 13 * * 3`) existed. In summer (regular season kickoff), the job ran at 09:00 EDT instead of 08:00.
+- Fix: corrected comment to explain both offsets, added the missing `0 12 * * 3` EDT entry. `pull_spreads.py` is idempotent so double-firing within the same week is safe.
+
+**Bug 66 — `admin.py` `adjust_points`: wrong base when `end_points == 0`**
+- The handler computed `new_end = (row["end_points"] or row["start_points"]) + adjustment`. When a player is eliminated (`end_points == 0`), `0 or start_points` evaluates to `start_points`, applying the adjustment against the wrong base.
+- Fix: replaced with `base = row["end_points"] if row["end_points"] is not None else row["start_points"]`.
+
+**Bug 67 — `admin/payout.html`: `urlencode` filter not registered**
+- The Venmo deep-link used `row.name | urlencode` to URL-encode player names. FastAPI's Jinja2 environment has no built-in `urlencode` filter — only Flask/Werkzeug register one. Any visit to `/admin/payout` would crash with `FilterError: No filter named 'urlencode'`.
+- Fix: added `from urllib.parse import quote_plus` and registered `templates.env.filters["urlencode"] = quote_plus` in `admin.py`.
+
+### Also verified clean this iteration
+- `migrations/002_functions.sql` — all 4 SQL functions correct; `lock_kicked_off_picks` covers both per-game and Saturday-noon semantics; `settle_game_picks` handles push/void/normal correctly; voided-game path is idempotent
+- `migrations/001_init.sql` — `standings_v` week_profit formula correct (0 for unsettled weeks, actual P&L for settled); `game_pick_totals_v` coalesces nulls to 0; `players.magic_token` has DB-generated default
+- `api/lib/spreads.py` — `espn_event_id` mismatch is documented intentional behavior; `poll_live_scores.py` matches by team-name pair, not ID; spread extraction handles favorite/underdog correctly
+- `api/routes/cron.py` — `/api/cron/detect-cancellations` is a no-op placeholder (real job is GH Actions); `vercel.json` cron schedules correct
+- `api/lib/db.py` — `delete_unlocked_picks_not_in` with empty list is unreachable (form validator catches no-game submissions first)
+- All 8 remaining templates — correct; `admin/edit_picks.html` `games(*)` embedding works via `select("*, games(*)")`; `player_profile.html` fields all present in `picks_reveal_v`
+
+### Running total: 67 bugs fixed, 111 commits
