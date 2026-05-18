@@ -2157,3 +2157,118 @@ Note: these are admin-only endpoints and the dashboard always provides valid pla
 - `row.rank_display | default(loop.index | string)` — defensive fallback; `apply_prize_ladder` always sets `rank_display`, so never actually triggered. ✅
 
 ### Running total: 77 bugs fixed, 139 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fifty-fifth)
+
+### No bugs found — final pattern-based scan, smoke_test.py, base.html, migrations verified
+
+**Global pattern scans** ✅
+
+- Grep for bare `except:` clauses → **none found**. All except clauses are typed (`except Exception`, `except httpx.HTTPError`, etc.). ✅
+- Grep for TODO/FIXME/HACK/BUG markers → **none found**. ✅
+- All 15 admin route handlers have `_=Depends(require_admin)` → **all gated**. ✅
+- No `| safe` filter usage in any template → **no XSS vectors**. ✅
+- FastAPI 0.115.5 `Jinja2Templates` autoescape confirmed enabled for `.html` files by default. ✅
+
+**`jobs/smoke_test.py`** ✅ (387 lines)
+
+- Exercises all 7 cron job paths using seeded fake data. ✅
+- Module-level `_seeded_player_ids` and `_seeded_game_ids` track state for partial-failure teardown. ✅
+- Teardown uses cascade deletes: players → picks → settlements → penalties. ✅
+- Fake kickoff times (3 days ago / 4 days from now) work correctly with `saturday_noon_et`. ✅
+- `check(label, condition, detail)` helper for PASS/FAIL reporting. ✅
+
+**`api/templates/base.html`** ✅
+
+- `htmx@1.9.12` pinned CDN URL. Tailwind CDN unpinned (acceptable tradeoff — v3 API stable). ✅
+- Nav: Standings (`/`), This Week (`/week/{{ week | default(1) }}`), Rules (`/rules`). ✅
+- Banner `{{ banner.banner_text }}` rendered as autoescaped text — no XSS. ✅
+
+**`migrations/004_games_team_unique.sql`** ✅
+
+- Adds `UNIQUE (season, week, home_team, away_team)` to games table — prevents duplicate games on idempotent upsert. ✅
+- Correct ordering: runs after 001_init.sql which creates the table. ✅
+
+**File coverage: COMPLETE**
+
+All files in `api/`, `jobs/`, `migrations/`, `Rules/`, `.github/workflows/`, `vercel.json`, and `requirements.txt` have been read and verified across iterations 1–55.
+
+### Running total: 77 bugs fixed, 139 commits
+
+---
+
+## Loop Iteration — 2026-05-18 (fifty-sixth)
+
+### Codebase audit complete — Launch Readiness Final Summary
+
+The 56-iteration autonomous audit is **complete**. Every file in the codebase has been read, reasoned about, and verified. Below is the consolidated launch readiness state.
+
+---
+
+## LAUNCH READINESS — Final Summary (2026-05-18)
+
+### What's been verified (code is production-ready)
+
+| Area | Status | Notes |
+|---|---|---|
+| Settlement math | ✅ Verified + replay-tested | 54/54 player-weeks pass against 2025 historical data |
+| Saturday-noon hard lock | ✅ Implemented | `timewall.py`, `picks.py`, `002_functions.sql` all enforce it |
+| Dynamic prize ladder | ✅ Implemented | `compute_prize_ladder(paid_count)` + `apply_prize_ladder()` in `timewall.py` |
+| Pre-lock pick privacy | ✅ Implemented | `/week/<n>` and `/player/<id>` both gate picks before Saturday noon |
+| Live standings | ✅ Implemented | ATS-implied real-time standings during in-progress games |
+| Admin routes auth | ✅ All 15 handlers gated | `require_admin` with timing-safe `secrets.compare_digest` |
+| Pick budget isolation | ✅ Implemented | `effective_available = available - locked_amount` for Thursday picks |
+| Bankruptcy elimination | ✅ Implemented | `max(0, ...)` floor; eliminated players skip no-bet penalty |
+| No-bet penalty | ✅ Implemented | Escalating -5000×consecutive; streak resets on non-consecutive weeks |
+| Cron job timing | ✅ Verified | All 7 GH Actions workflows have correct UTC↔ET offsets (DST-aware) |
+| Vercel cron paths | ✅ Match route decorators | `/api/cron/lock-and-reveal`, `/api/cron/detect-cancellations` |
+| Email delivery | ✅ Wired | Resend, magic links, Wed/Fri/Sat emails, admin alert |
+| ESPN spread backup | ✅ Implemented | `cross_check_spreads()` compares Odds API vs ESPN; admin dashboard shows diff |
+| End-of-season payout | ✅ Implemented | `/admin/payout` with prize splitter, Venmo deep links |
+| Smoke test | ✅ Implemented | `jobs/smoke_test.py` — run before go-live |
+| Security | ✅ Clean | No bare `except:`, no `| safe`, no TODO markers, XSS-safe autoescape |
+
+### Known limitations (acceptable for v1)
+
+1. **`pull_spreads.py` mid-week re-run resets game status** to `"scheduled"` on upsert. Not a bug in normal operation (job only runs Wednesday before Thursday kickoff). Admin can correct via score editor if ever needed.
+2. **`_load_via_nfl_data_py` in `settle_week.py`** is intentionally dead code (`NotImplementedError`) — team abbreviation format incompatible with ESPN display names. ESPN scoreboard is the only settlement score source.
+3. **Tailwind CDN unpinned** — v3 API is stable; acceptable for a 40-player internal pool. Can pin later if needed.
+4. **`detect_cancellations.py`** has no `--dry-run` in the GH Actions `workflow_dispatch` inputs (minor UX gap — not a bug; can test locally with `--dry-run` directly).
+5. **No mid-season player adds** — roster locks at Week 1 kickoff (intentional product decision).
+
+### Ryan's infrastructure checklist (all manual — code is ready)
+
+1. **Register domain** (~$12 Cloudflare/GoDaddy) → point to Vercel after deploy
+2. **Supabase project** → run migrations in order:
+   - `migrations/001_init.sql` (tables + views)
+   - `migrations/002_functions.sql` (stored procedures)
+   - `migrations/004_games_team_unique.sql` (unique constraint)
+   - Skip `003_seed_example.sql` in prod (dev seed only)
+3. **Vercel project** → link GitHub repo → set env vars from `.env.example`
+4. **API keys**: The Odds API (free, 500 req/mo), Resend (free, 3k/mo)
+5. **GitHub Secrets** (not variables):
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `ODDS_API_KEY`
+   - `FROM_EMAIL`, `FROM_NAME`, `APP_URL`, `ADMIN_EMAIL`
+   - **NOT `CRON_SECRET`** — that's Vercel-only
+6. **GitHub Variable** (not secret): `CURRENT_SEASON=2026`
+7. **Vercel env vars**: same as GitHub Secrets + `CRON_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
+8. **Add 2026 players** via admin dashboard before Week 1 kickoff
+9. **Smoke test**: `make smoke WEEK=1 SEASON=2026` against staging Supabase
+10. **Dry-run each workflow** via `workflow_dispatch` in GitHub Actions UI with `--dry-run` flag
+
+### Schedule to Week 1
+
+| When | Task |
+|---|---|
+| Now | Complete infrastructure setup (steps 1–7 above) |
+| ASAP (next 2 weeks) | Run smoke test + dry-run all cron jobs |
+| ~Aug 2026 | Add 2026 players, verify magic links deliver |
+| Week before Week 1 | Fire `pull_spreads.py --dry-run` to verify Odds API key + schedule |
+| Week 1 Wednesday | Live `pull_spreads.py` run → Wed email → picks open |
+| Week 1 Thursday kickoff | First real game lock → test live standings |
+| Week 1 Saturday noon | Saturday-noon hard lock → picks reveal email |
+| Week 1 Tuesday | First settlement run → standings advance |
+
+### Running total: 77 bugs fixed, 140 commits
