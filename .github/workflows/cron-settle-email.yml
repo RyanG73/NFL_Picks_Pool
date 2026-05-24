@@ -32,8 +32,8 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
-          FROM_NAME: ${{ vars.FROM_NAME }}
-          APP_URL: ${{ vars.APP_URL }}
+          FROM_NAME: ${{ secrets.FROM_NAME }}
+          APP_URL: ${{ secrets.APP_URL }}
           CURRENT_SEASON: ${{ vars.CURRENT_SEASON }}
         run: |
           WEEK="${{ inputs.week }}"
