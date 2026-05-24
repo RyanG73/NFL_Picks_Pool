@@ -110,7 +110,8 @@ python jobs/send_reminders.py     --week 1 --season 2026 --dry-run
 python jobs/lock_and_reveal.py    --week 1 --season 2026 --dry-run
 python jobs/poll_live_scores.py   --week 1 --season 2026 --once
 python jobs/settle_week.py        --week 1 --season 2026 --dry-run
-python jobs/detect_cancellations.py --week 1 --season 2026 --dry-run
+python jobs/detect_cancellations.py  --week 1 --season 2026 --dry-run
+python jobs/send_settlement_email.py  --week 1 --season 2026 --dry-run
 ```
 
 ## Validating settlement logic
@@ -138,6 +139,7 @@ Smoke test: seeds 3 fake players + 2 games, submits picks, locks, simulates scor
 | Saturday | ~1pm ET | Apply no-bet penalties → send picks reveal email (fires after noon lock) |
 | Thu/Sat/Sun/Mon | Game windows | Poll ESPN every 5 min for live scores (Sat = playoff weeks) |
 | Tuesday | 9:00am | Settle picks with final scores → advance week_log |
+| Tuesday | 6:00pm | Send personalized settlement results email to all players |
 
 ---
 
