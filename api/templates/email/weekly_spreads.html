@@ -48,7 +48,7 @@
   <tbody>
     {% for row in standings %}
     <tr {% if row.player_id == player.id %}style="background:#eff6ff;"{% endif %}>
-      <td style="color:#9ca3af;">{{ loop.index }}</td>
+      <td style="color:#9ca3af;">{{ row.rank_display | default(loop.index) }}</td>
       <td>
         {{ row.name }}
         {% if row.is_eliminated %}<span class="badge badge-red">OUT</span>{% endif %}
@@ -66,8 +66,6 @@
       <td style="text-align:right;">
         {% if row.prize %}
           <span class="badge badge-green">{{ row.prize }}</span>
-        {% elif prizes and not row.is_eliminated and loop.index <= prizes|length %}
-          <span class="badge badge-green">{{ prizes[loop.index-1] }}</span>
         {% endif %}
       </td>
     </tr>
