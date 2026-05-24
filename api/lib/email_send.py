@@ -78,11 +78,13 @@ def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
     if not players:
         return
     app_url = os.environ.get("APP_URL", "")
+    reveal_url = f"{app_url}/week/{week}"
     body = _render(
         "email/picks_reveal.html",
         week=week,
         season=season,
-        reveal_url=f"{app_url}/week/{week}",
+        reveal_url=reveal_url,
+        picks_url=reveal_url,  # footer "Your picks link" → this week's reveal
         app_url=app_url,
     )
     to_addrs = [p["email"] for p in players]
