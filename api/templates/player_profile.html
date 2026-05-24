@@ -141,6 +141,12 @@
 {% endif %}
 
 <!-- Penalties -->
+{% if not final_weeks %}
+<div class="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center text-gray-500 text-sm">
+  No settled weeks yet — check back after Week 1 results.
+</div>
+{% endif %}
+
 {% if penalties %}
 <div class="bg-red-50 border border-red-200 rounded-xl p-4">
   <h2 class="font-semibold text-red-800 mb-2">Penalties</h2>

@@ -100,7 +100,7 @@ async def picks_form(request: Request, token: str):
     available = _available_points(player["id"], week)
     already_used = sum(p["pick_amount"] for p in existing_picks.values())
     banner = db.get_active_banner()
-    picks_list = sorted(existing_picks.values(), key=lambda p: p["game_id"])
+    picks_list = sorted(existing_picks.values(), key=lambda p: (p.get("games") or {}).get("kickoff_at", ""))
     slot_picks = (picks_list + [None, None, None])[:3]
 
     return templates.TemplateResponse("picks_form.html", {
@@ -161,7 +161,7 @@ async def submit_picks(
 
     if errors:
         already_used = sum(p["pick_amount"] for p in existing_picks.values())
-        picks_list = sorted(existing_picks.values(), key=lambda p: p["game_id"])
+        picks_list = sorted(existing_picks.values(), key=lambda p: (p.get("games") or {}).get("kickoff_at", ""))
         slot_picks = (picks_list + [None, None, None])[:3]
         return templates.TemplateResponse("picks_form.html", {
             "request": request,

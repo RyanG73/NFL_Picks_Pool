@@ -106,8 +106,14 @@ async def add_player(
     week = _current_week()
     # Seed week_log row so this player shows on the leaderboard
     db.upsert_week_log(player["id"], SEASON, week, 25_000)
-    send_magic_link(player)
-    db.log_action("add_player", {"name": name, "email": email, "player_id": player["id"]})
+    email_error = None
+    try:
+        send_magic_link(player)
+    except Exception as exc:
+        email_error = str(exc)
+        print(f"[add_player] send_magic_link failed for {email}: {exc}")
+    if email_error:
+        return RedirectResponse(f"/admin/?error=player_added_but_email_failed", status_code=303)
     return RedirectResponse("/admin/", status_code=303)
 
 
@@ -129,7 +135,12 @@ async def resend_link(player_id: str, _=Depends(require_admin)):
     player = next((p for p in players if p["id"] == player_id), None)
     if not player:
         return RedirectResponse("/admin/?error=player_not_found", status_code=303)
-    send_magic_link(player)
+    try:
+        send_magic_link(player)
+    except Exception as exc:
+        print(f"[resend_link] send_magic_link failed for {player['email']}: {exc}")
+        db.log_action("resend_link", {"player_id": player_id})
+        return RedirectResponse("/admin/?error=email_send_failed", status_code=303)
     db.log_action("resend_link", {"player_id": player_id})
     return RedirectResponse("/admin/", status_code=303)
 
