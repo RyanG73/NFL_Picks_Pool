@@ -25,12 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from api.lib.settlement import GameResult, ats_winner
-
-
-# Pool week → (ESPN seasontype, ESPN week)
-# Regular season weeks 1-18; playoffs map to ESPN postseason weeks
-POOL_WEEK_MAP = {**{w: (2, w) for w in range(1, 19)},
-                 19: (3, 1), 20: (3, 2), 21: (3, 3), 22: (3, 5)}
+from api.lib.spreads import POOL_WEEK_MAP
 
 
 # ── CSV loaders ────────────────────────────────────────────────────────────

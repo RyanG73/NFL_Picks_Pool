@@ -8,7 +8,8 @@ Fully automated NFL picks pool web app (40-50 players, $50 buy-in, 25k starting 
 - Supabase Postgres (free tier, 500MB)
 - GitHub Actions (free tier, scheduled Python cron jobs)
 - Resend (email, free tier 3k/mo)
-- The Odds API (weekly spreads, free tier 500 req/mo)
+- ESPN public scoreboard (weekly spreads + live scores, no API key required)
+- nflverse games.csv (free spread cross-check, no API key required)
 - ESPN public scoreboard API (live scores, stdlib-only, no API key)
 - Magic-link auth per player (no login required for viewers)
 

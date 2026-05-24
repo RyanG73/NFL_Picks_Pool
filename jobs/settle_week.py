@@ -23,18 +23,13 @@ load_dotenv()
 
 from api.lib import db
 from api.lib.settlement import GameResult, ats_winner, settle_pick, compute_player_week_end_points
-
-
-# Pool week → (ESPN seasontype, ESPN week) — mirrors replay_test.py
-_POOL_WEEK_MAP = {**{w: (2, w) for w in range(1, 19)},
-                  19: (3, 1), 20: (3, 2), 21: (3, 3), 22: (3, 5)}
+from api.lib.spreads import POOL_WEEK_MAP as _POOL_WEEK_MAP
 
 
 def _load_via_nfl_data_py(season: int, week: int) -> dict[tuple, dict]:
     # nfl-data-py uses team abbreviations ("KC") but the DB stores full display
-    # names from The Odds API ("Kansas City Chiefs"). Without a mapping table
-    # these can't be matched, so we raise to force the ESPN fallback which uses
-    # the same displayName format as the DB.
+    # names ("Kansas City Chiefs"). Without a mapping table these can't be matched,
+    # so we raise to force the ESPN fallback which uses the same displayName format.
     raise NotImplementedError("nfl-data-py team names (abbreviations) incompatible with DB (full display names)")
 
 
@@ -72,7 +67,7 @@ def load_final_scores(season: int, week: int) -> dict[tuple, dict]:
 
     Tries nfl-data-py first (raises NotImplementedError due to name format
     mismatch), falls back to ESPN scoreboard API which uses the same full
-    display names stored in the DB by The Odds API.
+    display names stored in the DB.
     """
     try:
         scores = _load_via_nfl_data_py(season, week)

@@ -27,8 +27,8 @@ def fetch_postponed_games() -> set[tuple[str, str]]:
     """
     Return (home_team_name, away_team_name) pairs for postponed/cancelled games.
 
-    Matches by team name (not ESPN event ID) because espn_event_id in the DB
-    stores The Odds API's ID, which is a different system.
+    Matches by team name (not espn_event_id) — games inserted before the 2026
+    season may carry Odds API IDs in that column; team names are always reliable.
     """
     resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
     resp.raise_for_status()

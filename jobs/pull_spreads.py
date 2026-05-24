@@ -1,5 +1,5 @@
 """
-Wednesday 08:00 ET — fetch week's games + spreads from The Odds API,
+Wednesday 08:00 ET — fetch week's games + spreads from ESPN scoreboard,
 write to Supabase games table, and send the Wed email to all players.
 
 Usage: python jobs/pull_spreads.py --week 1 --season 2026 [--dry-run]
@@ -14,33 +14,33 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from api.lib import db, email_send
-from api.lib.spreads import fetch_week_games, fetch_espn_spreads, cross_check_spreads
+from api.lib.spreads import fetch_week_games, fetch_nflverse_spreads, cross_check_spreads
 from api.lib.timewall import compute_prize_ladder, apply_prize_ladder
 
 
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[pull_spreads] season={season} week={week} dry_run={dry_run}")
 
-    # Fetch from Odds API
+    # Fetch from ESPN scoreboard
     games = fetch_week_games(season, week)
-    print(f"  Fetched {len(games)} games from Odds API")
+    print(f"  Fetched {len(games)} games from ESPN")
 
     if not games:
-        print("  No games returned — check API key and season schedule")
+        print("  No games returned — season schedule may not be posted yet")
         return
 
-    # ESPN cross-check (non-fatal; warn if delta ≥ 1.5 points)
+    # nflverse cross-check (non-fatal; warn if delta ≥ 1.5 points)
     try:
-        espn_spreads = fetch_espn_spreads()
-        warnings = cross_check_spreads(games, espn_spreads)
+        nflverse_spreads = fetch_nflverse_spreads(season, week)
+        warnings = cross_check_spreads(games, nflverse_spreads)
         if warnings:
-            print(f"\n  ⚠️  SPREAD DISCREPANCIES (Odds API vs ESPN ≥ 1.5 pts):")
+            print(f"\n  ⚠️  SPREAD DISCREPANCIES (ESPN vs nflverse ≥ 1.5 pts):")
             for w in warnings:
                 print(f"    {w}")
             admin_email = os.environ.get("ADMIN_EMAIL")
             if admin_email and not dry_run:
                 body = "\n".join([
-                    f"Week {week} spread discrepancies (Odds API vs ESPN consensus ≥ 1.5 pts):",
+                    f"Week {week} spread discrepancies (ESPN vs nflverse ≥ 1.5 pts):",
                     "",
                     *[f"  • {w}" for w in warnings],
                     "",
@@ -53,9 +53,9 @@ def main(week: int, season: int, dry_run: bool = False):
                 )
                 print(f"  Alert emailed to {admin_email}")
         else:
-            print(f"  ESPN cross-check OK ({len(espn_spreads)} games checked)")
+            print(f"  nflverse cross-check OK ({len(nflverse_spreads)} games checked)")
     except Exception as exc:
-        print(f"  ESPN cross-check failed (non-fatal): {exc}")
+        print(f"  nflverse cross-check failed (non-fatal): {exc}")
 
     if dry_run:
         for g in games:

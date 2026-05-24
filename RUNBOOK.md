@@ -78,11 +78,11 @@ The Vercel crons are a belt-and-suspenders safety net. On Hobby, GitHub Actions 
 
 ## "Got an ESPN spread discrepancy email"
 
-The Wednesday job cross-checks Odds API spreads against ESPN's public scoreboard. If any game has a difference ≥ 1.5 points, an alert email goes to ADMIN_EMAIL.
+The Wednesday job cross-checks ESPN spreads against nflverse games.csv. If any game has a difference ≥ 1.5 points, an alert email goes to ADMIN_EMAIL.
 
 1. The email lists the game and both spread values.
 2. Go to `/admin/` → Games → find the game → use **Fix Spread** (the yellow button) to correct the spread.
-3. The Odds API spread is used for betting and settlement — only override if you're confident the Odds API is wrong.
+3. The ESPN spread is used for betting and settlement — only override if you're confident ESPN is wrong.
 4. This is a non-fatal warning; spreads were already inserted and the Wednesday email was sent.
 
 ---

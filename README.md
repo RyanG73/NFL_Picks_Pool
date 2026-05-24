@@ -2,7 +2,7 @@
 
 Fully automated NFL picks pool web app. 40–50 players, $50 buy-in, 25,000 starting points, up to 3 ATS bets/week. Public leaderboard, magic-link picks form, live score updates, automated emails.
 
-**Tech:** FastAPI + Jinja2 + htmx + Tailwind · Supabase Postgres · Vercel · GitHub Actions · The Odds API · Resend
+**Tech:** FastAPI + Jinja2 + htmx + Tailwind · Supabase Postgres · Vercel · GitHub Actions · ESPN API · Resend
 
 ---
 
@@ -14,7 +14,6 @@ Fully automated NFL picks pool web app. 40–50 players, $50 buy-in, 25,000 star
 |---|---|---|
 | Supabase | https://supabase.com | Database + RPC functions |
 | Vercel | https://vercel.com | Hosting + short cron jobs |
-| The Odds API | https://the-odds-api.com | Weekly spread data |
 | Resend | https://resend.com | Automated emails |
 
 ### 2. Set up Supabase
@@ -42,7 +41,6 @@ cp .env.example .env
 | `SUPABASE_SERVICE_KEY` | Supabase → Settings → API → service_role key |
 | `RESEND_API_KEY` | Resend dashboard → API Keys |
 | `FROM_EMAIL` | A verified domain/email in Resend |
-| `ODDS_API_KEY` | The Odds API dashboard |
 | `APP_URL` | Your Vercel deployment URL |
 | `ADMIN_USERNAME` | Choose anything (HTTP Basic auth for `/admin/`) |
 | `ADMIN_PASSWORD` | Choose something strong |
@@ -65,7 +63,7 @@ Add every `.env` variable in Vercel dashboard → Settings → Environment Varia
 Repo → Settings → Secrets and Variables → Actions:
 
 ```
-SUPABASE_URL  SUPABASE_SERVICE_KEY  RESEND_API_KEY  ODDS_API_KEY
+SUPABASE_URL  SUPABASE_SERVICE_KEY  RESEND_API_KEY
 FROM_EMAIL  FROM_NAME  APP_URL  ADMIN_EMAIL
 ```
 

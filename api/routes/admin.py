@@ -9,7 +9,7 @@ from api.lib import db
 from api.lib.auth import require_admin
 from api.lib.email_send import send_magic_link, send_broadcast
 from api.lib.timewall import compute_prize_ladder, apply_prize_ladder, kickoff_time_et
-from api.lib.spreads import fetch_espn_spreads, cross_check_spreads
+from api.lib.spreads import fetch_nflverse_spreads, cross_check_spreads
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -33,8 +33,8 @@ async def admin_home(request: Request, _=Depends(require_admin)):
     audit = db.get_client().table("admin_audit_log").select("*").order("performed_at", desc=True).limit(30).execute().data
     penalties = db.get_client().table("penalties").select("*, players(name)").eq("season", SEASON).order("applied_at", desc=True).execute().data
     try:
-        espn_spreads = fetch_espn_spreads()
-        spread_warnings = cross_check_spreads(games, espn_spreads)
+        nflverse_spreads = fetch_nflverse_spreads(SEASON, week)
+        spread_warnings = cross_check_spreads(games, nflverse_spreads)
     except Exception:
         spread_warnings = []
     return templates.TemplateResponse("admin/dashboard.html", {

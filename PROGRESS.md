@@ -2247,9 +2247,9 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
    - `migrations/004_games_team_unique.sql` (unique constraint)
    - Skip `003_seed_example.sql` in prod (dev seed only)
 3. **Vercel project** → link GitHub repo → set env vars from `.env.example`
-4. **API keys**: The Odds API (free, 500 req/mo), Resend (free, 3k/mo)
+4. **API keys**: Resend (free, 3k/mo) — spreads use ESPN + nflverse (no key needed)
 5. **GitHub Secrets** (not variables):
-   - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `ODDS_API_KEY`
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`
    - `FROM_EMAIL`, `FROM_NAME`, `APP_URL`, `ADMIN_EMAIL`
    - **NOT `CRON_SECRET`** — that's Vercel-only
 6. **GitHub Variable** (not secret): `CURRENT_SEASON=2026`
