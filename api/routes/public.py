@@ -246,6 +246,7 @@ async def player_profile(request: Request, player_id: str):
         "picks_by_week": picks_by_week,
         "season": SEASON,
         "week": current_week,
+        "banner": db.get_active_banner(),
     })
 
 
