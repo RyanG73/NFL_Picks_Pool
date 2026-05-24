@@ -61,6 +61,12 @@ def test_kickoff_day_et_thursday():
     assert "Thu" in result
 
 
+def test_kickoff_day_et_monday():
+    # 2026-09-14 is a Monday (MNF)
+    result = kickoff_day_et("2026-09-15T00:15:00Z")  # midnight UTC = Mon 8:15pm EDT
+    assert "Mon" in result
+
+
 def test_kickoff_day_et_invalid_fallback():
     result = kickoff_day_et("not-a-date")
     assert isinstance(result, str)
@@ -282,3 +288,7 @@ def test_spread_fmt_invalid_string():
 
 def test_spread_fmt_zero():
     assert spread_fmt(0.0) == "0"
+
+
+def test_spread_fmt_integer_input():
+    assert spread_fmt(3) == "3"

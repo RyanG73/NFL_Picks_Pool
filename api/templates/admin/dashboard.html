@@ -135,8 +135,9 @@
               </button>
             </form>
           </td>
-          <td class="px-4 py-2 text-right font-mono">
+          <td class="px-4 py-2 text-right font-mono {% if standing and standing.is_eliminated %}text-red-400{% endif %}">
             {{ "{:,}".format(standing.current_points) if standing else '—' }}
+            {% if standing and standing.is_eliminated %}<span class="text-xs text-red-500 ml-1">OUT</span>{% endif %}
           </td>
           <td class="px-4 py-2 text-center">
             <div class="flex justify-center gap-2 flex-wrap">

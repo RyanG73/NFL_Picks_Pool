@@ -67,7 +67,11 @@ def main(week: int, season: int, dry_run: bool = False):
             my_picks = picks_by_player.get(pid, [])
             pnl = sum(p.get("net_profit") or 0 for p in my_picks)
             penalty = penalties_by_player.get(pid)
-            print(f"  {player['name']}: {len(my_picks)} picks, P&L={pnl:+,}"
+            pick_summary = ", ".join(
+                f"{p.get('pick_team_name','?')} {p.get('result','?').upper() if p.get('result') else 'PENDING'}"
+                for p in my_picks
+            )
+            print(f"  {player['name']}: P&L={pnl:+,} [{pick_summary or 'no picks'}]"
                   f"{' | PENALTY' if penalty else ''}")
         print("  (dry-run: no emails sent)")
         return
