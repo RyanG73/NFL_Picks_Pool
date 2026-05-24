@@ -11,6 +11,7 @@ from api.lib.timewall import (
     is_locked,
     compute_prize_ladder,
     apply_prize_ladder,
+    spread_fmt,
 )
 
 _ET = ZoneInfo("America/New_York")
@@ -250,3 +251,34 @@ def test_apply_prize_ladder_more_players_than_prizes():
 
 def test_apply_prize_ladder_empty():
     assert apply_prize_ladder([], []) == []
+
+
+# ── spread_fmt ─────────────────────────────────────────────────────────────────
+
+def test_spread_fmt_whole_number_float():
+    assert spread_fmt(3.0) == "3"
+
+
+def test_spread_fmt_half_point():
+    assert spread_fmt(3.5) == "3.5"
+
+
+def test_spread_fmt_whole_number_string():
+    assert spread_fmt("7.0") == "7"
+
+
+def test_spread_fmt_half_point_string():
+    assert spread_fmt("10.5") == "10.5"
+
+
+def test_spread_fmt_none():
+    assert spread_fmt(None) == "None"
+
+
+def test_spread_fmt_invalid_string():
+    result = spread_fmt("not-a-number")
+    assert result == "not-a-number"
+
+
+def test_spread_fmt_zero():
+    assert spread_fmt(0.0) == "0"
