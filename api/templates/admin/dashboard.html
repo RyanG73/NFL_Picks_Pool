@@ -307,7 +307,9 @@
       <tr class="border-b border-gray-100 last:border-0">
         <td class="px-4 py-2 text-gray-400 font-mono">{{ entry.performed_at[:16] | replace('T', ' ') }}</td>
         <td class="px-4 py-2 font-semibold">{{ entry.action }}</td>
-        <td class="px-4 py-2 text-gray-500 font-mono text-xs truncate max-w-xs">{{ entry.payload | tojson }}</td>
+        <td class="px-4 py-2 text-gray-500 text-xs truncate max-w-xs" title="{{ entry.payload | tojson }}">
+          {{ entry.payload | audit_detail(entry.action) }}
+        </td>
       </tr>
       {% endfor %}
     </tbody>

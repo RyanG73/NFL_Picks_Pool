@@ -17,6 +17,45 @@ templates.env.filters["kickoff_et"] = kickoff_time_et
 templates.env.filters["kickoff_day"] = kickoff_day_et
 templates.env.filters["spread_fmt"] = spread_fmt
 templates.env.filters["urlencode"] = quote_plus
+
+
+def _audit_detail(payload: dict | None, action: str) -> str:
+    """Return a concise human-readable summary of an audit log payload."""
+    p = payload or {}
+    if action == "add_player":
+        return f"{p.get('name', '?')} <{p.get('email', '')}>"
+    if action == "broadcast":
+        return (p.get("subject") or "")[:60]
+    if action == "adjust_points":
+        adj = p.get("adjustment", 0)
+        reason = p.get("reason", "")
+        return f"{adj:+,} pts — {reason}"
+    if action in ("void_game", "waive_penalty"):
+        return p.get("reason", "")[:60]
+    if action == "correct_score":
+        return f"{p.get('home_score')}–{p.get('away_score')}"
+    if action == "correct_spread":
+        return f"spread → {p.get('spread')}"
+    if action == "toggle_paid":
+        return "✓ Paid" if p.get("paid_buyin") else "✗ Unpaid"
+    if action == "auto_penalty":
+        amt = p.get("amount", 0)
+        n = p.get("consecutive", 1)
+        return f"miss #{n}, {amt:+,} pts"
+    if action == "override_pick":
+        return f"{p.get('pick_side', '?')} {p.get('pick_amount', 0):,} pts"
+    if action == "clear_banner":
+        return ""
+    if action == "resend_link":
+        return ""
+    if action == "flag_postponed":
+        return p.get("teams", "")
+    # Fallback: compact JSON
+    import json
+    return json.dumps(p)[:60]
+
+
+templates.env.filters["audit_detail"] = _audit_detail
 SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 
 
