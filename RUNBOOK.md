@@ -60,6 +60,7 @@ The Vercel crons are a belt-and-suspenders safety net. On Hobby, GitHub Actions 
 | Saturday | ~1pm ET | Lock picks + apply no-bet penalties | Check `/admin/` penalties section |
 | Thu/Sat/Sun/Mon | Game windows | Poll ESPN live scores (Sat = playoff weeks) | Check game scores update on `/` |
 | Tuesday | 9am | Settle week + advance balances | Check leaderboard + week_log |
+| Tuesday | 6pm | Send settlement results emails to players | Check GitHub Actions → `cron-settle-email.yml` |
 
 ---
 

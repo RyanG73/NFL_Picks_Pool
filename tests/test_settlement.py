@@ -3,6 +3,7 @@ import pytest
 from api.lib.settlement import ats_winner, settle_pick, compute_penalty_amount, compute_player_week_end_points, GameResult
 
 
+
 def _result(fav_score: int, dog_score: int, spread: float, status: str = "final") -> GameResult:
     return GameResult(
         game_id="test",
@@ -51,6 +52,17 @@ def test_zero_spread_favorite_wins():
 def test_zero_spread_tie():
     gr = _result(fav_score=14, dog_score=14, spread=0.0)
     assert ats_winner(gr) == "push"
+
+
+def test_voided_game_returns_voided():
+    gr = _result(fav_score=14, dog_score=7, spread=3.0, status="voided")
+    assert ats_winner(gr) == "voided"
+
+
+def test_underdog_wins_outright():
+    gr = _result(fav_score=10, dog_score=21, spread=3.5)
+    # diff = 10 - 21 = -11, which is < 3.5 → underdog covers
+    assert ats_winner(gr) == "UNDERDOG"
 
 
 # ── settle_pick ────────────────────────────────────────────────────────────────
@@ -164,3 +176,13 @@ def test_week_end_points_multiple_settlements_and_penalty():
         penalties=[{"amount": -5000, "waived": False}],
     )
     assert result == 22_000
+
+
+def test_week_end_points_already_eliminated():
+    # Eliminated player (0 points) — penalty can't push below zero; clamp holds
+    result = compute_player_week_end_points(
+        0,
+        settlements=[],
+        penalties=[{"amount": -5000, "waived": False}],
+    )
+    assert result == 0
