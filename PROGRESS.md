@@ -2353,3 +2353,51 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
 - `detect_cancellations.py` queries ESPN without a week parameter — gets ESPN's "current week", which matches pool week in-season but may miss transitions during playoff bye weeks. Low risk since job runs hourly and team-name matching means no false positives.
 - `rules.html` uses Tailwind CDN + `prose` class — if the CDN doesn't bundle the typography plugin, rules page will be unstyled HTML (still readable). Easy to verify visually at `/rules`.
 - All 43 unit tests pass (35 settlement, 8 timewall, 8 spreads — 51 total with 43 in this session run).
+
+### Round 5 improvements (continued 2026-05-24)
+
+- **d23c517** — feat: `spread_fmt` Jinja2 filter rolled out to all 4 template environments (public, picks, admin, email) and applied in all 8 templates that display spread values — strips trailing `.0` from whole-number spreads (e.g., `3.0 → "3"`)
+- **f4d6b0c** — feat: admin dashboard — "Clear Banner" button to dismiss active in-app banner without sending a dummy broadcast; error flash display when redirected with `?error=` query param
+- **08d527d** — feat: picks_reveal email — game pick-split summary table showing how many players chose each side (replaces minimal "picks are live" copy)
+- **b7a4c5a** — test: 7 unit tests for `spread_fmt` (whole-number float, half-point, whole-number string, half-point string, None, invalid string, zero)
+- **62760d9** — test: 6 unit tests for `compute_player_week_end_points` (win, loss, penalty, waived-penalty excluded, clamp-to-zero, multiple settlements + penalty)
+- **970fe8a** — fix: `pull_spreads.py` dry-run output now uses `spread_fmt` (was printing "3.0" instead of "3")
+- **0066aa7** — feat: leaderboard game cards — VOID / PPD status badges; LIVE green pulse dot for in-progress games
+- **1761ee0** — feat: week_view heatmap — color-coded status badges (voided=red, postponed=orange, in_progress=green/pulse); fixed `IN_PROGRESS` → "IN PROGRESS" text
+- **9560f72** — fix: admin dashboard game status badge — orange for POSTPONED; fixed `IN_PROGRESS` → "IN PROGRESS" text
+
+### Round 5 manual verification needed
+
+- **email/picks_reveal.html** — pick-split table (NOT VISUALLY TESTED — trigger `lock_and_reveal.py` with games having picks)
+- **admin/dashboard.html** — "Clear Banner" button + error flash (NOT VISUALLY TESTED — send a broadcast with banner, then click Clear)
+
+### Round 5 observations
+
+- All 60 unit tests pass after this round (31 settlement, 7 spread_fmt, 8 timewall/filters, 6 end_points, 8 cross_check_spreads)
+- `spread_fmt` is now fully consistent across the entire UI surface — no more "3.0" anywhere
+
+### Round 6 improvements (continued 2026-05-24)
+
+- **409e215** — feat: settlement results email — new `jobs/send_settlement_email.py` job + `email/settlement_results.html` + `email_send.send_settlement_results()` + `cron-settle-email.yml` workflow (Tue 6pm ET); players get personalized pick results immediately after settlement, not waiting until Wednesday
+- **218d788** — fix: cron-settle-email workflow — `FROM_NAME`/`APP_URL` referenced as `secrets.*` (matches all other workflows)
+- **fda4973** — ux: picks_form locked state + week_view sort by performance — submit button replaced with "Picks locked" callout when deadline passed; week_view players_picks sorted by total_net_profit descending
+- **8508d94** — feat: player profile rank card + admin week selector — player profile shows current rank (with prize indicator if in prize position); admin dashboard has week dropdown (1–22) that auto-submits
+- **6fa802f** — test: 3 more settlement edge cases (voided game ats_winner, underdog wins outright, eliminated player penalty clamp to zero) + RUNBOOK weekly ops table
+- **3be1433** — chore: Makefile `results` target for `send_settlement_email.py --dry-run`
+- **606d782** — fix: rules.html — replaced `prose prose-sm` Tailwind class with inline CSS; Tailwind CDN doesn't bundle the typography plugin so prose class was rendering unstyled HTML
+- **9722d2a** — ux: leaderboard "last updated" timestamp — htmx OOB swap updates `<span id="last-updated">` to actual time on each 60s poll; weekly_spreads email standings heading now says "Week N-1 Standings"
+- **6ecc77a** — ux: admin audit log — human-readable detail column per action type (was raw JSON); title attr preserves full JSON on hover
+
+### Round 6 manual verification needed
+
+- **email/settlement_results.html** — full results email (NOT VISUALLY TESTED — trigger `make results WEEK=N` to verify dry-run output; trigger with live Supabase to see rendered email)
+- **player_profile.html** — rank card (NOT VISUALLY TESTED — check `/player/<id>` in Vercel preview)
+- **admin/dashboard.html** — week selector (NOT VISUALLY TESTED — check `/admin/?week=3`)
+- **rules.html** — markdown rendering with inline CSS (NOT VISUALLY TESTED — check `/rules` in browser)
+- **leaderboard** — "last updated" timestamp updates after first 60s poll (NOT VISUALLY TESTED)
+
+### Round 6 observations
+
+- All 63 unit tests pass
+- Settlement results email is the biggest new feature: personalized Tuesday results email with WIN/LOSS/PUSH badges, P&L summary, current rank — wires up a workflow gap (players previously had to wait until Wednesday's spreads email to learn their results)
+- Admin week selector closes a gap where admin couldn't see historical weeks without editing the URL
