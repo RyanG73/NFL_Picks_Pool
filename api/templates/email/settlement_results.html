@@ -83,7 +83,7 @@
 <!-- Standings summary -->
 {% if my_standing %}
 <p style="font-size:14px;color:#374151;">
-  You're currently ranked <strong>{{ my_standing.rank_display | default('#' ~ loop_rank) }}</strong>
+  You're currently ranked <strong>{{ my_standing.rank_display | default('?') }}</strong>
   with <strong>{{ "{:,}".format(my_standing.current_points) }}</strong> points.
   {% if my_standing.prize %}<span style="color:#15803d;font-weight:700;"> 🏆 {{ my_standing.prize }} prize position!</span>{% endif %}
 </p>

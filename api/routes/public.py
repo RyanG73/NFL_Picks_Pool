@@ -157,11 +157,16 @@ async def leaderboard_fragment(request: Request):
     standings, is_live = _compute_live_standings(SEASON, week)
     prizes = _compute_prizes(standings)
     standings = _apply_prizes(standings, prizes)
+    now_et = datetime.now(timezone.utc).astimezone(__import__("zoneinfo").ZoneInfo("America/New_York"))
+    hour = now_et.hour % 12 or 12
+    ampm = "AM" if now_et.hour < 12 else "PM"
+    updated_at = f"{hour}:{now_et.minute:02d} {ampm} ET"
     return templates.TemplateResponse("fragments/standings_rows.html", {
         "request": request,
         "standings": standings,
         "week": week,
         "is_live": is_live,
+        "updated_at": updated_at,
     })
 
 

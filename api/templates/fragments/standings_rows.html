@@ -66,3 +66,6 @@
   </td>
 </tr>
 {% endif %}
+{% if updated_at %}
+<span id="last-updated" hx-swap-oob="true">{{ updated_at }}</span>
+{% endif %}
