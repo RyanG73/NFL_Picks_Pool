@@ -69,7 +69,7 @@ def fetch_espn_scores() -> dict[tuple[str, str], dict]:
 
 def update_games(season: int, week: int, games: list[dict], scores: dict[tuple[str, str], dict], dry_run: bool):
     for game in games:
-        if game["status"] in ("voided", "final"):
+        if game["status"] in ("voided", "final", "postponed"):
             continue
         key = (game["home_team"], game["away_team"])
         score = scores.get(key)
