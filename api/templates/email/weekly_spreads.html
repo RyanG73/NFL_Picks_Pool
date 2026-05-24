@@ -57,10 +57,11 @@
       <td style="text-align:right;font-family:monospace;font-weight:700;">
         {{ "{:,}".format(row.current_points) }}
       </td>
+      {% set wp = row.week_profit | default(0) %}
       <td style="text-align:right;font-family:monospace;
-        {% if row.week_profit > 0 %}color:#15803d;{% elif row.week_profit < 0 %}color:#dc2626;{% endif %}">
+        {% if wp > 0 %}color:#15803d;{% elif wp < 0 %}color:#dc2626;{% endif %}">
         {% if row.week_profit is not none %}
-          {% if row.week_profit > 0 %}+{% endif %}{{ "{:,}".format(row.week_profit) }}
+          {% if wp > 0 %}+{% endif %}{{ "{:,}".format(wp) }}
         {% else %}—{% endif %}
       </td>
       <td style="text-align:right;">

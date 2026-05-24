@@ -42,6 +42,7 @@ def _validate_picks(
     games_by_id: dict,
     available: int,
     sat_noon: datetime,
+    has_locked_picks: bool = False,
 ) -> list[str]:
     """Return a list of validation error messages (empty = valid)."""
     errors = []
@@ -77,7 +78,9 @@ def _validate_picks(
 
     if total > available:
         errors.append(f"Total bets ({total:,}) exceed your available {available:,} points.")
-    if not used_games:
+    # Allow empty submission when locked picks already exist in the DB — the player
+    # isn't clearing their picks, they just can't touch locked slots.
+    if not used_games and not has_locked_picks:
         errors.append("You must select at least one game.")
     return errors
 
@@ -152,7 +155,8 @@ async def submit_picks(
     locked_amount = sum(p["pick_amount"] for p in existing_picks.values() if p.get("locked_at"))
     effective_available = available - locked_amount
 
-    errors = _validate_picks(game_ids, sides, amounts, games_by_id, effective_available, sat_noon)
+    has_locked_picks = any(p.get("locked_at") for p in existing_picks.values())
+    errors = _validate_picks(game_ids, sides, amounts, games_by_id, effective_available, sat_noon, has_locked_picks=has_locked_picks)
 
     if errors:
         already_used = sum(p["pick_amount"] for p in existing_picks.values())
