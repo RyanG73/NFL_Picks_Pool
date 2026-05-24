@@ -80,14 +80,14 @@
                 onclick="setSide({{ slot }}, 'FAVORITE')"
                 class="flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors
                        {% if sp and sp.pick_side == 'FAVORITE' %}bg-blue-600 text-white border-blue-600{% else %}border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-700{% endif %}">
-          Favorite
+          {% if sp %}{{ sp.games.favorite_team | default('Favorite') }}{% else %}Favorite{% endif %}
         </button>
         <input type="hidden" name="side_{{ slot }}" id="side_{{ slot }}" value="{{ sp.pick_side if sp else '' }}">
         <button type="button" id="btn-dog-{{ slot }}"
                 onclick="setSide({{ slot }}, 'UNDERDOG')"
                 class="flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors
                        {% if sp and sp.pick_side == 'UNDERDOG' %}bg-orange-500 text-white border-orange-500{% else %}border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-700{% endif %}">
-          Underdog
+          {% if sp %}{{ sp.games.underdog_team | default('Underdog') }}{% else %}Underdog{% endif %}
         </button>
       </div>
 
@@ -168,15 +168,34 @@
 
   function updateSideButtons(slot) {
     document.getElementById('side_' + slot).value = '';
+    const gSel = document.getElementById('game_' + slot);
+    const opt = gSel?.options[gSel?.selectedIndex];
+    const fav = opt?.dataset?.fav || 'Favorite';
+    const dog = opt?.dataset?.dog || 'Underdog';
     const favBtn = document.getElementById('btn-fav-' + slot);
     const dogBtn = document.getElementById('btn-dog-' + slot);
-    if (favBtn) favBtn.className = FAV_IDLE;
-    if (dogBtn) dogBtn.className = DOG_IDLE;
+    if (favBtn) { favBtn.className = FAV_IDLE; favBtn.textContent = fav; }
+    if (dogBtn) { dogBtn.className = DOG_IDLE; dogBtn.textContent = dog; }
     recalcRemaining();
   }
 
   // Game + side + amount are pre-populated server-side via slot_picks.
-  // Just sync the remaining-points display on load.
+  // Sync the remaining-points display, then lock UI for already-locked slots.
   recalcRemaining();
+
+  for (let i = 1; i <= 3; i++) {
+    const gSel = document.getElementById('game_' + i);
+    const opt = gSel?.options[gSel?.selectedIndex];
+    if (opt && opt.disabled && opt.value) {
+      // Slot has a locked game — disable editing to avoid confusion
+      gSel.disabled = true;
+      const amtInput = document.getElementById('amount_' + i);
+      if (amtInput) { amtInput.disabled = true; amtInput.classList.add('opacity-50', 'bg-gray-50'); }
+      const favBtn = document.getElementById('btn-fav-' + i);
+      const dogBtn = document.getElementById('btn-dog-' + i);
+      if (favBtn) { favBtn.disabled = true; favBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+      if (dogBtn) { dogBtn.disabled = true; dogBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+    }
+  }
 </script>
 {% endblock %}
