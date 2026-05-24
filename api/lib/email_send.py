@@ -121,6 +121,56 @@ def send_magic_link(player: dict, season: int = 0) -> None:
     })
 
 
+def send_settlement_results(
+    players: list[dict],
+    week: int,
+    season: int,
+    picks_by_player: dict[str, list[dict]],
+    standings: list[dict],
+    penalties_by_player: dict[str, dict] | None = None,
+) -> None:
+    """Tuesday after settlement: personalized results email to each player."""
+    if not players:
+        return
+    app_url = os.environ.get("APP_URL", "")
+    standings_by_id = {s["player_id"]: s for s in standings}
+    errors: list[tuple[str, str]] = []
+    for player in players:
+        pid = player["id"]
+        my_picks = picks_by_player.get(pid, [])
+        week_pnl = sum(p.get("net_profit") or 0 for p in my_picks)
+        my_standing = standings_by_id.get(pid)
+        new_balance = my_standing["current_points"] if my_standing else 0
+        penalty = (penalties_by_player or {}).get(pid)
+        try:
+            body = _render(
+                "email/settlement_results.html",
+                player=player,
+                week=week,
+                season=season,
+                my_picks=my_picks,
+                week_pnl=week_pnl,
+                new_balance=new_balance,
+                my_standing=my_standing,
+                penalty_amount=penalty.get("amount") if penalty else None,
+                consecutive_misses=penalty.get("consecutive_misses") if penalty else None,
+                app_url=app_url,
+                picks_url=f"{app_url}/p/{player['magic_token']}",
+            )
+            resend.Emails.send({
+                "from": FROM,
+                "to": player["email"],
+                "subject": f"📊 Week {week} Results — {season} NFL Picks Pool",
+                "html": body,
+            })
+        except Exception as exc:
+            errors.append((player["email"], str(exc)))
+    if errors:
+        print(f"[email_send] send_settlement_results: {len(errors)} error(s):")
+        for addr, err in errors:
+            print(f"  {addr}: {err}")
+
+
 def send_admin_alert(to: str, subject: str, body: str) -> None:
     """Send a plain-text alert to the admin (Ryan)."""
     body_html = f"<pre style='font-family:monospace'>{_html.escape(body)}</pre>"

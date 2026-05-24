@@ -203,6 +203,7 @@ async def week_view(request: Request, week: int):
     return templates.TemplateResponse("week_view.html", {
         "request": request,
         "week": week,
+        "current_week": _current_week(),
         "season": SEASON,
         "players_picks": players_picks,
         "game_totals": game_totals,

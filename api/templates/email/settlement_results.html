@@ -1,0 +1,98 @@
+{% extends "email/base_email.html" %}
+{% block subject %}📊 Week {{ week }} Results — NFL Picks Pool{% endblock %}
+{% block header_sub %}Week {{ week }} Settled{% endblock %}
+
+{% block body %}
+<p>Hey {{ player.name }},</p>
+<p>Week {{ week }} is officially settled. Here's how you did:</p>
+
+<!-- Player's picks results -->
+{% if my_picks %}
+<table class="data">
+  <thead>
+    <tr>
+      <th>Pick</th>
+      <th>Spread</th>
+      <th style="text-align:center;">Bet</th>
+      <th style="text-align:center;">Result</th>
+      <th style="text-align:right;">P&amp;L</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in my_picks %}
+    <tr>
+      <td>
+        <strong>{{ p.pick_team_name }}</strong>
+        <span style="color:#9ca3af;font-size:12px;"> vs {{ p.away_team if p.home_team == p.pick_team_name else p.home_team }}</span>
+      </td>
+      <td style="font-family:monospace;">
+        {% if p.pick_side == 'FAVORITE' %}-{{ p.spread | spread_fmt }}{% else %}+{{ p.spread | spread_fmt }}{% endif %}
+      </td>
+      <td style="text-align:center;font-family:monospace;">{{ "{:,}".format(p.pick_amount) }}</td>
+      <td style="text-align:center;">
+        {% if p.result == 'win' %}
+          <span class="badge badge-green">WIN</span>
+        {% elif p.result == 'loss' %}
+          <span class="badge badge-red">LOSS</span>
+        {% elif p.result == 'push' %}
+          <span class="badge badge-yellow">PUSH</span>
+        {% elif p.result == 'voided' %}
+          <span class="badge" style="background:#f3f4f6;color:#6b7280;">VOID</span>
+        {% else %}
+          <span class="badge" style="background:#f3f4f6;color:#6b7280;">—</span>
+        {% endif %}
+      </td>
+      <td style="text-align:right;font-family:monospace;
+        {% if p.net_profit and p.net_profit > 0 %}color:#15803d;font-weight:700;
+        {% elif p.net_profit and p.net_profit < 0 %}color:#dc2626;font-weight:700;
+        {% endif %}">
+        {% if p.net_profit is not none %}
+          {% if p.net_profit > 0 %}+{% endif %}{{ "{:,}".format(p.net_profit) }}
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Week summary -->
+<div style="background:#f9fafb;border-radius:8px;padding:16px;margin:16px 0;display:flex;justify-content:space-between;align-items:center;">
+  <div>
+    <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Week {{ week }} P&amp;L</div>
+    <div style="font-size:22px;font-weight:700;
+      {% if week_pnl > 0 %}color:#15803d;{% elif week_pnl < 0 %}color:#dc2626;{% else %}color:#6b7280;{% endif %}">
+      {% if week_pnl > 0 %}+{% endif %}{{ "{:,}".format(week_pnl) }}
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">New Balance</div>
+    <div style="font-size:22px;font-weight:700;color:#374151;">{{ "{:,}".format(new_balance) }}</div>
+  </div>
+</div>
+
+{% else %}
+<!-- Penalty notice (no picks submitted) -->
+<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0;">
+  <div style="font-size:13px;font-weight:700;color:#991b1b;">No picks submitted this week.</div>
+  {% if penalty_amount %}
+  <div style="font-size:13px;color:#dc2626;margin-top:4px;">Penalty applied: {{ "{:,}".format(penalty_amount) }} pts (miss #{{ consecutive_misses }})</div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Standings summary -->
+{% if my_standing %}
+<p style="font-size:14px;color:#374151;">
+  You're currently ranked <strong>{{ my_standing.rank_display | default('#' ~ loop_rank) }}</strong>
+  with <strong>{{ "{:,}".format(my_standing.current_points) }}</strong> points.
+  {% if my_standing.prize %}<span style="color:#15803d;font-weight:700;"> 🏆 {{ my_standing.prize }} prize position!</span>{% endif %}
+</p>
+{% endif %}
+
+<a href="{{ app_url }}" class="cta">📊 See Full Standings</a>
+
+<hr class="divider">
+<p style="font-size:13px;color:#6b7280;">
+  {% if week < 22 %}Week {{ week + 1 }} spreads and updated standings arrive Wednesday.{% else %}That's a wrap on the {{ season }} season! Final standings are live.{% endif %}
+</p>
+{% endblock %}
