@@ -91,10 +91,11 @@ def main(week: int, season: int, dry_run: bool = False):
                 "amount": amount,
             })
 
-    # Send picks reveal email
+    # Send picks reveal email (include game pick totals for summary table)
     if not dry_run:
         try:
-            email_send.send_picks_reveal(players, week, season)
+            game_totals = db.get_game_pick_totals(season, week)
+            email_send.send_picks_reveal(players, week, season, game_totals=game_totals)
             print(f"  Picks reveal email sent to {len(players)} players")
         except Exception as exc:
             print(f"  ⚠  send_picks_reveal failed (penalties were written): {exc}")

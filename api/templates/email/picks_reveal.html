@@ -4,7 +4,40 @@
 {% set picks_url = reveal_url %}
 
 {% block body %}
-<p>Picks are locked and live for Week {{ week }}! See what everyone bet — and start sweating those spreads.</p>
+<p>Picks are locked and live for Week {{ week }}! Here's how the bets broke down before we see who covers.</p>
+
+{% if game_totals %}
+<p><strong>This Week's Pick Split</strong></p>
+<table class="data">
+  <thead>
+    <tr>
+      <th>Matchup</th>
+      <th style="text-align:center;">Favorite picks</th>
+      <th style="text-align:center;">Underdog picks</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for g in game_totals %}
+    {% set total_picks = g.favorite_count + g.underdog_count %}
+    {% set fav_pct = (g.favorite_count / total_picks * 100) | round | int if total_picks > 0 else 50 %}
+    {% set dog_pct = 100 - fav_pct %}
+    <tr>
+      <td>
+        <strong>{{ g.favorite_team }}</strong>
+        <span style="color:#9ca3af;font-size:12px;"> -{{ g.spread | spread_fmt }}</span>
+        <span style="color:#9ca3af;font-size:12px;"> vs {{ g.underdog_team }}</span>
+      </td>
+      <td style="text-align:center;color:#1d4ed8;font-weight:700;">
+        {{ g.favorite_count }} <span style="font-weight:400;color:#6b7280;font-size:12px;">({{ fav_pct }}%)</span>
+      </td>
+      <td style="text-align:center;color:#c2410c;font-weight:700;">
+        {{ g.underdog_count }} <span style="font-weight:400;color:#6b7280;font-size:12px;">({{ dog_pct }}%)</span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 
 <a href="{{ reveal_url }}" class="cta">👀 See All Week {{ week }} Picks</a>
 

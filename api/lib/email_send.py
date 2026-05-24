@@ -74,7 +74,7 @@ def send_reminder(player: dict, week: int, season: int = 0) -> None:
     })
 
 
-def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
+def send_picks_reveal(players: list[dict], week: int, season: int, game_totals: list[dict] | None = None) -> None:
     """Saturday after lock: picks are live."""
     if not players:
         return
@@ -87,6 +87,7 @@ def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
         reveal_url=reveal_url,
         picks_url=reveal_url,  # footer "Your picks link" → this week's reveal
         app_url=app_url,
+        game_totals=game_totals or [],
     )
     to_addrs = [p["email"] for p in players]
     payload: dict = {
