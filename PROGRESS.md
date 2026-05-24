@@ -2341,3 +2341,15 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
 - **4b4a0c1** — fix: send_picks_reveal — footer "Your picks link" now points to `/week/N` (the reveal page) instead of the homepage
 - **d95c2f0** — fix: send_reminders — per-player error handling (one bad email address no longer halts the entire reminder loop)
 - **d663e19** — fix: lock_and_reveal — isolate reveal email failure from penalty writes (penalties succeed; email error is logged as warning, job exits cleanly)
+
+### Round 4 improvements (same overnight loop session, continued 2026-05-24)
+
+- **9420cd0** — fix: spreads — remove `status: "scheduled"` from `_extract_game` upsert dict; DB column default applies for new rows; existing rows keep current status if pull_spreads is re-run mid-week (latent re-run safety bug)
+- **859b0e3** — feat: 8 unit tests for `cross_check_spreads` (pure logic; no network calls); `send_broadcast` plain-text auto-wrap (`<p>`/`<br>`) so Ryan's admin broadcast messages render correctly in email clients when typed as plain text
+- **this commit** — chore: admin score form `required`+`min=0` on score inputs (prevents blank-submit 422); Makefile `SEASON ?= 2026` default + `detect` target; PROGRESS.md round 4 update
+
+### Round 4 TODOs / observations
+
+- `detect_cancellations.py` queries ESPN without a week parameter — gets ESPN's "current week", which matches pool week in-season but may miss transitions during playoff bye weeks. Low risk since job runs hourly and team-name matching means no false positives.
+- `rules.html` uses Tailwind CDN + `prose` class — if the CDN doesn't bundle the typography plugin, rules page will be unstyled HTML (still readable). Easy to verify visually at `/rules`.
+- All 43 unit tests pass (35 settlement, 8 timewall, 8 spreads — 51 total with 43 in this session run).

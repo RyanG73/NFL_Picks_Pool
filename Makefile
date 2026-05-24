@@ -1,4 +1,6 @@
-.PHONY: dev install lint replay smoke test week season help
+.PHONY: dev install lint replay smoke test detect week season help
+
+SEASON ?= 2026
 
 # ── Local dev ──────────────────────────────────────────────────────────────
 dev:
@@ -33,6 +35,9 @@ settle:
 scores:
 	python jobs/poll_live_scores.py --week $(WEEK) --season $(SEASON) --once
 
+detect:
+	python jobs/detect_cancellations.py --week $(WEEK) --season $(SEASON) --dry-run
+
 # ── Helpers ────────────────────────────────────────────────────────────────
 help:
 	@echo "Usage:"
@@ -44,3 +49,6 @@ help:
 	@echo "  make settle  WEEK=1 SEASON=2026   Dry-run settlement"
 	@echo "  make scores  WEEK=1 SEASON=2026   Fetch live scores (once)"
 	@echo "  make smoke   WEEK=1 SEASON=2026   End-to-end smoke test (needs live Supabase)"
+	@echo "  make detect  WEEK=1 SEASON=2026   Dry-run cancellation check (ESPN)"
+	@echo ""
+	@echo "  SEASON defaults to 2026 if not specified"
