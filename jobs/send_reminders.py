@@ -63,11 +63,19 @@ def main(week: int, season: int, dry_run: bool = False):
     ]
     print(f"  {len(missing)} players haven't picked yet (eliminated players skipped)")
 
+    errors: list[tuple[str, str]] = []
     for player in missing:
         print(f"  → Reminding {player['name']} ({player['email']})")
         if not dry_run:
-            email_send.send_reminder(player, week, season)
+            try:
+                email_send.send_reminder(player, week, season)
+            except Exception as exc:
+                errors.append((player["email"], str(exc)))
 
+    if errors:
+        print(f"  [send_reminders] {len(errors)} email error(s):")
+        for addr, err in errors:
+            print(f"    {addr}: {err}")
     if dry_run:
         print("  (dry-run: no emails sent)")
 
