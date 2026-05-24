@@ -24,8 +24,13 @@
       {% if g.status in ['in_progress', 'final'] %}
       <div class="mt-1 text-center text-gray-500">
         {{ g.home_score | default(0) }} – {{ g.away_score | default(0) }}
-        {% if g.status == 'final' %}<span class="text-red-600 font-bold ml-1">F</span>{% endif %}
+        {% if g.status == 'final' %}<span class="text-red-600 font-bold ml-1">F</span>
+        {% elif g.status == 'in_progress' %}<span class="text-green-600 font-bold ml-1 animate-pulse">●</span>{% endif %}
       </div>
+      {% elif g.status == 'voided' %}
+      <div class="mt-1 text-center text-red-500 font-bold">VOID</div>
+      {% elif g.status == 'postponed' %}
+      <div class="mt-1 text-center text-orange-500 font-bold">PPD</div>
       {% endif %}
     </div>
     {% endfor %}
