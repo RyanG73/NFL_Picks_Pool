@@ -43,8 +43,25 @@ def main(week: int, season: int, dry_run: bool = False):
     )
     submitted_ids = {p["player_id"] for p in picks_this_week}
 
-    missing = [p for p in players if p["id"] not in submitted_ids and p["is_active"]]
-    print(f"  {len(missing)} players haven't picked yet")
+    # Load week balances so we can skip eliminated players (0 pts can't bet anyway)
+    week_log_rows = (
+        get_client()
+        .table("week_log")
+        .select("player_id, start_points")
+        .eq("season", season)
+        .eq("week", week)
+        .execute()
+        .data
+    )
+    start_by_player = {r["player_id"]: r["start_points"] for r in week_log_rows}
+
+    missing = [
+        p for p in players
+        if p["id"] not in submitted_ids
+        and p["is_active"]
+        and start_by_player.get(p["id"], 25_000) > 0
+    ]
+    print(f"  {len(missing)} players haven't picked yet (eliminated players skipped)")
 
     for player in missing:
         print(f"  → Reminding {player['name']} ({player['email']})")
