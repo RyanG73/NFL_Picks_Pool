@@ -2,9 +2,25 @@
 {% block title %}Week {{ week }} Standings — NFL Picks Pool{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">Week {{ week }} Standings</h1>
-  <p class="text-sm text-gray-500 mt-1">{{ season }} Season · Updates live during games</p>
+<div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Week {{ week }} Standings</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      {{ season }} Season ·
+      {% if is_historical %}Historical snapshot{% else %}Updates live during games{% endif %}
+    </p>
+  </div>
+  <div class="flex items-center gap-2 text-sm">
+    {% if week > 1 %}
+    <a href="/?week={{ week - 1 }}" class="text-gray-400 hover:text-gray-700">← Wk {{ week - 1 }}</a>
+    {% endif %}
+    {% if is_historical %}
+    <a href="/" class="bg-nfl-green text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">Current Week</a>
+    {% endif %}
+    {% if week < current_week | default(week) %}
+    <a href="/?week={{ week + 1 }}" class="text-gray-400 hover:text-gray-700">Wk {{ week + 1 }} →</a>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Games this week (quick summary bar) -->
@@ -57,16 +73,20 @@
     </thead>
     <tbody
       id="standings-body"
+      {% if not is_historical %}
       hx-get="/leaderboard-fragment"
       hx-trigger="every 60s"
       hx-swap="innerHTML"
+      {% endif %}
     >
       {% include "fragments/standings_rows.html" %}
     </tbody>
   </table>
 </div>
 
+{% if not is_historical %}
 <p class="text-xs text-gray-400 mt-3 text-right">
   Refreshes automatically · Last updated <span id="last-updated">just now</span>
 </p>
+{% endif %}
 {% endblock %}

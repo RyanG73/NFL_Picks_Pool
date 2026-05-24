@@ -131,22 +131,32 @@ def _apply_prizes(standings: list[dict], prizes: list[str]) -> list[dict]:
 # ── Leaderboard (home) ─────────────────────────────────────────────────────
 
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    week = _current_week()
-    standings, is_live = _compute_live_standings(SEASON, week)
-    games = db.get_games(SEASON, week)
+async def home(request: Request, week: int | None = None):
+    current_week = _current_week()
+    viewing_week = week if week is not None else current_week
+    is_historical = viewing_week != current_week
+
+    if is_historical:
+        standings = db.get_standings(SEASON, viewing_week)
+        is_live = False
+    else:
+        standings, is_live = _compute_live_standings(SEASON, viewing_week)
+
+    games = db.get_games(SEASON, viewing_week)
     banner = db.get_active_banner()
     prizes = _compute_prizes(standings)
     standings = _apply_prizes(standings, prizes)
     return templates.TemplateResponse("leaderboard.html", {
         "request": request,
         "standings": standings,
-        "week": week,
+        "week": viewing_week,
+        "current_week": current_week,
         "season": SEASON,
         "games": games,
         "banner": banner,
         "is_live": is_live,
         "is_fragment": False,
+        "is_historical": is_historical,
     })
 
 
