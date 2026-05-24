@@ -15,7 +15,7 @@ load_dotenv()
 
 from api.lib import db, email_send
 from api.lib.spreads import fetch_week_games, fetch_nflverse_spreads, cross_check_spreads
-from api.lib.timewall import compute_prize_ladder, apply_prize_ladder
+from api.lib.timewall import compute_prize_ladder, apply_prize_ladder, spread_fmt
 
 
 def main(week: int, season: int, dry_run: bool = False):
@@ -59,7 +59,7 @@ def main(week: int, season: int, dry_run: bool = False):
 
     if dry_run:
         for g in games:
-            print(f"    {g['favorite_team']} -{g['spread']} vs {g['underdog_team']}  {g['kickoff_at'][:16]}")
+            print(f"    {g['favorite_team']} -{spread_fmt(g['spread'])} vs {g['underdog_team']}  {g['kickoff_at'][:16]}")
         return
 
     # Upsert into games table
