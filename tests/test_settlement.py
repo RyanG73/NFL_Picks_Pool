@@ -1,6 +1,6 @@
 """Unit tests for api/lib/settlement.py pure-logic functions."""
 import pytest
-from api.lib.settlement import ats_winner, settle_pick, compute_penalty_amount, GameResult
+from api.lib.settlement import ats_winner, settle_pick, compute_penalty_amount, compute_player_week_end_points, GameResult
 
 
 def _result(fav_score: int, dog_score: int, spread: float, status: str = "final") -> GameResult:
@@ -103,3 +103,64 @@ def test_third_consecutive_miss():
 def test_penalty_escalates_linearly():
     for n in range(1, 6):
         assert compute_penalty_amount(n) == -5_000 * n
+
+
+# ── compute_player_week_end_points ────────────────────────────────────────────
+
+def test_week_end_points_win():
+    # Win 5000: 25000 + 5000 = 30000
+    result = compute_player_week_end_points(
+        25_000,
+        settlements=[{"net_profit": 5000}],
+        penalties=[],
+    )
+    assert result == 30_000
+
+
+def test_week_end_points_loss():
+    result = compute_player_week_end_points(
+        25_000,
+        settlements=[{"net_profit": -5000}],
+        penalties=[],
+    )
+    assert result == 20_000
+
+
+def test_week_end_points_with_penalty():
+    # 25000 + 0 (no picks settled) - 5000 (penalty) = 20000
+    result = compute_player_week_end_points(
+        25_000,
+        settlements=[],
+        penalties=[{"amount": -5000, "waived": False}],
+    )
+    assert result == 20_000
+
+
+def test_week_end_points_waived_penalty_excluded():
+    # Waived penalty should NOT be applied
+    result = compute_player_week_end_points(
+        25_000,
+        settlements=[],
+        penalties=[{"amount": -5000, "waived": True}],
+    )
+    assert result == 25_000
+
+
+def test_week_end_points_clamps_to_zero():
+    # Points can't go below 0
+    result = compute_player_week_end_points(
+        1_000,
+        settlements=[{"net_profit": -5000}],
+        penalties=[],
+    )
+    assert result == 0
+
+
+def test_week_end_points_multiple_settlements_and_penalty():
+    # 25000 + 5000 (win) - 3000 (loss) - 5000 (penalty) = 22000
+    result = compute_player_week_end_points(
+        25_000,
+        settlements=[{"net_profit": 5000}, {"net_profit": -3000}],
+        penalties=[{"amount": -5000, "waived": False}],
+    )
+    assert result == 22_000
