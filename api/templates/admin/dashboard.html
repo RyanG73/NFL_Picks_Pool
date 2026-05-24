@@ -165,7 +165,7 @@
     <div class="px-4 py-3 border-b border-gray-100 last:border-0 flex flex-wrap items-center gap-4">
       <div class="flex-1 text-sm">
         <span class="font-semibold">{{ g.favorite_team }}</span>
-        <span class="text-gray-400 mx-1">-{{ g.spread }}</span>
+        <span class="text-gray-400 mx-1">-{{ g.spread | spread_fmt }}</span>
         <span>{{ g.underdog_team }}</span>
         <span class="ml-2 text-xs text-gray-400">{{ g.kickoff_at | kickoff_day }} · {{ g.kickoff_at | kickoff_et }}</span>
         <span class="ml-2 px-2 py-0.5 rounded text-xs font-bold

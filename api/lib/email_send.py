@@ -3,7 +3,7 @@ import os
 import resend
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from api.lib.timewall import kickoff_time_et, kickoff_day_et
+from api.lib.timewall import kickoff_time_et, kickoff_day_et, spread_fmt
 
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
@@ -13,6 +13,7 @@ _template_env = Environment(
 )
 _template_env.filters["kickoff_et"] = kickoff_time_et
 _template_env.filters["kickoff_day"] = kickoff_day_et
+_template_env.filters["spread_fmt"] = spread_fmt
 
 FROM = f"{os.environ.get('FROM_NAME', 'NFL Picks Pool')} <{os.environ.get('FROM_EMAIL', 'picks@example.com')}>"
 

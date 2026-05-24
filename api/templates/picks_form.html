@@ -72,7 +72,7 @@
                 data-spread="{{ g.spread }}"
                 {% if locked %}disabled{% endif %}
                 {% if sp and sp.game_id == g.id %}selected{% endif %}>
-          {{ g.kickoff_at | kickoff_day }} {{ g.kickoff_at | kickoff_et }} · {{ g.favorite_team }} -{{ g.spread }} vs {{ g.underdog_team }}
+          {{ g.kickoff_at | kickoff_day }} {{ g.kickoff_at | kickoff_et }} · {{ g.favorite_team }} -{{ g.spread | spread_fmt }} vs {{ g.underdog_team }}
           {% if locked %}(LOCKED){% endif %}
         </option>
         {% endfor %}

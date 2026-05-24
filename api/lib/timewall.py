@@ -128,6 +128,15 @@ def _parse_utc(iso: str) -> datetime:
     return dt
 
 
+def spread_fmt(value) -> str:
+    """Format a spread removing trailing .0 — e.g. 3.0 → '3', 3.5 → '3.5'."""
+    try:
+        f = float(value)
+        return str(int(f)) if f == int(f) else str(f)
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def kickoff_time_et(utc_iso: str) -> str:
     """Jinja2 filter: convert UTC ISO timestamp to '1:00 PM ET' for display."""
     try:

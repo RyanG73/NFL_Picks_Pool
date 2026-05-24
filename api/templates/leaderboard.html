@@ -18,7 +18,7 @@
       </div>
       <div class="flex justify-between items-center">
         <span class="font-bold">{{ g.favorite_team | truncate(10, True, '') }}</span>
-        <span class="text-gray-400 mx-1">-{{ g.spread }}</span>
+        <span class="text-gray-400 mx-1">-{{ g.spread | spread_fmt }}</span>
         <span>{{ g.underdog_team | truncate(10, True, '') }}</span>
       </div>
       {% if g.status in ['in_progress', 'final'] %}

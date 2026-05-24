@@ -24,7 +24,7 @@
       <tr class="border-b border-gray-100 last:border-0">
         <td class="px-4 py-2">
           {% if pick.games %}
-            {{ pick.games.favorite_team }} -{{ pick.games.spread }} vs {{ pick.games.underdog_team }}
+            {{ pick.games.favorite_team }} -{{ pick.games.spread | spread_fmt }} vs {{ pick.games.underdog_team }}
           {% else %}
             {{ pick.game_id }}
           {% endif %}
@@ -47,7 +47,7 @@
       <select name="game_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
         <option value="">— Choose game —</option>
         {% for g in games %}
-        <option value="{{ g.id }}">{{ g.favorite_team }} -{{ g.spread }} vs {{ g.underdog_team }} ({{ g.kickoff_at | kickoff_day }})</option>
+        <option value="{{ g.id }}">{{ g.favorite_team }} -{{ g.spread | spread_fmt }} vs {{ g.underdog_team }} ({{ g.kickoff_at | kickoff_day }})</option>
         {% endfor %}
       </select>
     </div>

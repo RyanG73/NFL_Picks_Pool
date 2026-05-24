@@ -5,12 +5,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from api.lib import db
 from api.lib.auth import validate_magic_token
-from api.lib.timewall import saturday_noon_et, is_locked as game_is_locked, kickoff_time_et, kickoff_day_et
+from api.lib.timewall import saturday_noon_et, is_locked as game_is_locked, kickoff_time_et, kickoff_day_et, spread_fmt
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 templates.env.filters["kickoff_et"] = kickoff_time_et
 templates.env.filters["kickoff_day"] = kickoff_day_et
+templates.env.filters["spread_fmt"] = spread_fmt
 
 SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
 

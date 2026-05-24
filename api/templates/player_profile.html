@@ -106,7 +106,7 @@
           <div class="flex-1 min-w-0">
             <span class="font-medium">{{ p.pick_team_name }}</span>
             <span class="text-gray-400 text-xs ml-2">
-              {% if p.pick_side == 'FAVORITE' %}-{{ p.spread }}{% else %}+{{ p.spread }}{% endif %}
+              {% if p.pick_side == 'FAVORITE' %}-{{ p.spread | spread_fmt }}{% else %}+{{ p.spread | spread_fmt }}{% endif %}
               · vs {{ p.away_team if p.home_team == p.pick_team_name else p.home_team }}
             </span>
           </div>

@@ -24,7 +24,7 @@
     <tr>
       <td style="color:#6b7280;white-space:nowrap;">{{ g.kickoff_at | kickoff_day }}<br><span style="font-size:11px;">{{ g.kickoff_at | kickoff_et }}</span></td>
       <td><strong>{{ g.favorite_team }}</strong></td>
-      <td style="text-align:center;font-family:monospace;font-weight:700;">-{{ g.spread }}</td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;">-{{ g.spread | spread_fmt }}</td>
       <td>{{ g.underdog_team }}</td>
     </tr>
     {% endfor %}
