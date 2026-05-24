@@ -129,6 +129,9 @@ def send_broadcast(players: list[dict], subject: str, body_html: str) -> None:
     """Mass-message all players."""
     if not players:
         return
+    # Auto-wrap plain text so email clients don't collapse everything to one line
+    if "<" not in body_html:
+        body_html = "<p>" + body_html.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
     to_addrs = [p["email"] for p in players]
     payload: dict = {
         "from": FROM,
