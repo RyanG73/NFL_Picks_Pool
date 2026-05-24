@@ -2405,18 +2405,27 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
 ### Round 7 improvements (continued 2026-05-24)
 
 - **1bebde4** — fix: week_view subtitle — contextual status after picks revealed ("Results live · updates every 60 sec", "Week N settled", or "Picks revealed" vs. always "Picks reveal Saturday at noon ET")
-- **662aa48** — fix: picks slot sort by kickoff_at (was sorted by UUID game_id — arbitrary order); add_player send_magic_link error handling with console-log + error redirect; player_profile empty state when no settled weeks yet
+- **662aa48** — fix: picks slot sort by kickoff_at (was sorted by UUID game_id — arbitrary order); add_player/resend_link send_magic_link error handling with console-log + error redirect; player_profile empty state when no settled weeks yet
 - **1998e67** — fix: detect_cancellations — pass season/week params to ESPN API so manual `--week N` runs check the correct slate (previously checked ESPN's "current week" regardless)
 - **f717021** — feat: picks_reveal email — add kickoff day + time below each matchup row in pick-split table
+- **1125f01** — feat: admin players table shows "OUT" badge + red points for eliminated players; settlement dry-run output shows each pick's team + result; 2 new tests (test_kickoff_day_et_monday, test_spread_fmt_integer_input) — 65 tests total
+- **f55f542** — feat: leaderboard historical week browsing — `/?week=N` with prev/next nav arrows, "Current Week" button, disabled htmx polling for historical views
+- **7760b7f** — feat: broadcast emails now render inside the standard pool email template (header/footer/styling) instead of bare unstyled HTML; new `email/broadcast.html` template
+- **a38acbe** — fix: `_available_points` — guard against null start_points in week_log (fallback to 25,000 instead of returning None and causing a downstream TypeError)
 
 ### Round 7 manual verification needed
 
 - **week_view subtitle** — check `/week/N` when picks_revealed=True and all games final, and when live (NOT VISUALLY TESTED)
 - **player_profile empty state** — check `/player/<id>` for player with no settled weeks (NOT VISUALLY TESTED)
 - **picks_reveal email** — kickoff day/time in pick split table (NOT VISUALLY TESTED)
+- **leaderboard /?week=N** — historical navigation arrows, "Current Week" button, no htmx polling (NOT VISUALLY TESTED — verify after Week 1 settles)
+- **admin broadcast email** — styled template rendering (NOT VISUALLY TESTED — send a test broadcast via admin dashboard)
+- **admin eliminated "OUT" badge** — only visible once a player reaches 0 points (NOT VISUALLY TESTED)
 
 ### Round 7 observations
 
-- All 63 unit tests pass
+- All 65 unit tests pass (up from 63)
 - `detect_cancellations.py` season/week fix closes a correctness gap for manual re-runs and historical debug runs
 - Slot sorting by kickoff time ensures consistent pick display order in form (Thursday game always appears before Sunday games)
+- Historical leaderboard browsing fills a UX gap — players can now review any prior week's standings without needing to know the URL format
+- Broadcast emails now match the rest of the pool's email design (previously looked like spam with no branding)
