@@ -33,7 +33,10 @@ def _available_points(player_id: str, week: int) -> int:
         .limit(1)
         .execute()
     )
-    return res.data[0]["start_points"] if res.data else 25_000
+    if res.data:
+        val = res.data[0]["start_points"]
+        return int(val) if val is not None else 25_000
+    return 25_000
 
 
 def _validate_picks(
