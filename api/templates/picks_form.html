@@ -113,19 +113,21 @@
     {% endfor %}
   </div>
 
-  <!-- Submit -->
+  <!-- Submit / locked state -->
+  {% if sat_noon_passed %}
+  <div class="w-full bg-gray-100 border border-gray-200 rounded-xl py-4 text-center text-gray-500 font-semibold text-sm">
+    🔒 Picks locked for this week
+  </div>
+  {% else %}
   <button type="submit" id="submit-btn"
           class="w-full bg-nfl-green text-white font-bold py-4 rounded-xl text-lg
                  hover:opacity-90 active:scale-95 transition disabled:opacity-40">
     Save My Picks
   </button>
   <p class="text-xs text-center text-gray-400 mt-2">
-    {% if sat_noon_passed %}
-      Picks are locked for games kicking off today · Thursday picks lock at kickoff
-    {% else %}
-      Sunday/Monday picks lock Saturday at noon ET · Thursday picks lock at kickoff
-    {% endif %}
+    Sunday/Monday picks lock Saturday at noon ET · Thursday picks lock at kickoff
   </p>
+  {% endif %}
 </form>
 
 <script>
