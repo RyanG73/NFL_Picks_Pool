@@ -2401,3 +2401,22 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
 - All 63 unit tests pass
 - Settlement results email is the biggest new feature: personalized Tuesday results email with WIN/LOSS/PUSH badges, P&L summary, current rank — wires up a workflow gap (players previously had to wait until Wednesday's spreads email to learn their results)
 - Admin week selector closes a gap where admin couldn't see historical weeks without editing the URL
+
+### Round 7 improvements (continued 2026-05-24)
+
+- **1bebde4** — fix: week_view subtitle — contextual status after picks revealed ("Results live · updates every 60 sec", "Week N settled", or "Picks revealed" vs. always "Picks reveal Saturday at noon ET")
+- **662aa48** — fix: picks slot sort by kickoff_at (was sorted by UUID game_id — arbitrary order); add_player send_magic_link error handling with console-log + error redirect; player_profile empty state when no settled weeks yet
+- **1998e67** — fix: detect_cancellations — pass season/week params to ESPN API so manual `--week N` runs check the correct slate (previously checked ESPN's "current week" regardless)
+- **f717021** — feat: picks_reveal email — add kickoff day + time below each matchup row in pick-split table
+
+### Round 7 manual verification needed
+
+- **week_view subtitle** — check `/week/N` when picks_revealed=True and all games final, and when live (NOT VISUALLY TESTED)
+- **player_profile empty state** — check `/player/<id>` for player with no settled weeks (NOT VISUALLY TESTED)
+- **picks_reveal email** — kickoff day/time in pick split table (NOT VISUALLY TESTED)
+
+### Round 7 observations
+
+- All 63 unit tests pass
+- `detect_cancellations.py` season/week fix closes a correctness gap for manual re-runs and historical debug runs
+- Slot sorting by kickoff time ensures consistent pick display order in form (Thursday game always appears before Sunday games)
