@@ -2315,3 +2315,21 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
 - **Player profile missing banner**: `player_profile()` route was missing `banner` context variable — fixed in the same commit that added filter registration to `public.py`.
 - **`None week_profit` crash in standings_rows.html**: `{% if row.week_profit > 0 %}` would crash on None — fixed with `| default(0)`.
 
+### Round 2 improvements (same overnight loop session)
+
+- **e70d971** — fix: 3 hardening fixes — picks validation, email None-guard, reminder copy
+  - `picks.py`: `_validate_picks` now accepts `has_locked_picks` flag — prevents spurious "must select at least one game" error when all picks are locked (JS disables selects so they're not submitted)
+  - `weekly_spreads.html`: None-guarded `week_profit` inline CSS style with `| default(0)`
+  - `reminder.html`: Thursday kickoff lock mention (matches magic_link.html copy)
+- **9f85a4b** — fix: `poll_live_scores` — preserve postponed game status (was silently reset to "scheduled" by ESPN pre-game state)
+- **d9d94f2** — ci: add `ci-unit-tests.yml` — pytest tests/ runs on every push to main
+- **4f98b8e** — docs: RUNBOOK update — remove stale Odds API references (3 places)
+
+### Additional manual verification needed (round 2)
+
+- `/p/<token>` — locked slot behaviour when a player has all 3 Thursday picks locked (NOT VISUALLY TESTED — needs a Thursday game window)
+
+### Additional TODOs (round 2)
+
+- Adjust Points form verified in admin.py ✅ (route exists at line 94)
+- `make smoke WEEK=1 SEASON=2026` — should be run before Week 1 kickoff against staging Supabase
