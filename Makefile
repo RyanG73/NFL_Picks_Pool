@@ -1,4 +1,4 @@
-.PHONY: dev install lint replay smoke test detect week season help
+.PHONY: dev install lint replay smoke test detect results week season help
 
 SEASON ?= 2026
 
@@ -38,6 +38,9 @@ scores:
 detect:
 	python jobs/detect_cancellations.py --week $(WEEK) --season $(SEASON) --dry-run
 
+results:
+	python jobs/send_settlement_email.py --week $(WEEK) --season $(SEASON) --dry-run
+
 # ── Helpers ────────────────────────────────────────────────────────────────
 help:
 	@echo "Usage:"
@@ -50,5 +53,6 @@ help:
 	@echo "  make scores  WEEK=1 SEASON=2026   Fetch live scores (once)"
 	@echo "  make smoke   WEEK=1 SEASON=2026   End-to-end smoke test (needs live Supabase)"
 	@echo "  make detect  WEEK=1 SEASON=2026   Dry-run cancellation check (ESPN)"
+	@echo "  make results WEEK=1 SEASON=2026   Dry-run settlement results email"
 	@echo ""
 	@echo "  SEASON defaults to 2026 if not specified"
