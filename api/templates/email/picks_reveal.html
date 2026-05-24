@@ -26,6 +26,9 @@
         <strong>{{ g.favorite_team }}</strong>
         <span style="color:#9ca3af;font-size:12px;"> -{{ g.spread | spread_fmt }}</span>
         <span style="color:#9ca3af;font-size:12px;"> vs {{ g.underdog_team }}</span>
+        {% if g.kickoff_at %}
+        <div style="color:#9ca3af;font-size:11px;margin-top:2px;">{{ g.kickoff_at | kickoff_day }} · {{ g.kickoff_at | kickoff_et }}</div>
+        {% endif %}
       </td>
       <td style="text-align:center;color:#1d4ed8;font-weight:700;">
         {{ g.favorite_count }} <span style="font-weight:400;color:#6b7280;font-size:12px;">({{ fav_pct }}%)</span>
