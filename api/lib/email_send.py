@@ -178,18 +178,28 @@ def send_admin_alert(to: str, subject: str, body: str) -> None:
 
 
 def send_broadcast(players: list[dict], subject: str, body_html: str) -> None:
-    """Mass-message all players."""
+    """Mass-message all players via BCC with the standard pool email template."""
     if not players:
         return
+    app_url = os.environ.get("APP_URL", "")
+    season = int(os.environ.get("CURRENT_SEASON", 2026))
     # Auto-wrap plain text so email clients don't collapse everything to one line
     if "<" not in body_html:
         body_html = "<p>" + body_html.replace("\n\n", "</p><p>").replace("\n", "<br>") + "</p>"
+    html = _render(
+        "email/broadcast.html",
+        subject=subject,
+        body_html=body_html,
+        season=season,
+        app_url=app_url,
+        picks_url=app_url,
+    )
     to_addrs = [p["email"] for p in players]
     payload: dict = {
         "from": FROM,
         "to": to_addrs[0],
         "subject": subject,
-        "html": body_html,
+        "html": html,
     }
     if len(to_addrs) > 1:
         payload["bcc"] = to_addrs[1:]
