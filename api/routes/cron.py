@@ -23,7 +23,6 @@ async def lock_picks(authorization: str | None = Header(default=None)):
     """Runs every 5 minutes — locks picks at kickoff or Saturday noon."""
     _verify(authorization)
     season = int(os.environ.get("CURRENT_SEASON", 2026))
-    from api.lib.db import get_client
     now = datetime.now(timezone.utc)
     week = db.detect_current_week(season)
     games = db.get_games(season, week)
@@ -33,7 +32,7 @@ async def lock_picks(authorization: str | None = Header(default=None)):
     if now >= sat_noon:
         params["sat_noon"] = sat_noon.isoformat()
 
-    get_client().rpc("lock_kicked_off_picks", params).execute()
+    db.get_client().rpc("lock_kicked_off_picks", params).execute()
     return {"status": "ok", "sat_noon_passed": now >= sat_noon}
 
 

@@ -8,9 +8,8 @@ Fully automated NFL picks pool web app (40-50 players, $50 buy-in, 25k starting 
 - Supabase Postgres (free tier, 500MB)
 - GitHub Actions (free tier, scheduled Python cron jobs)
 - Resend (email, free tier 3k/mo)
-- ESPN public scoreboard (weekly spreads + live scores, no API key required)
+- ESPN public scoreboard (weekly spreads, live scores, settlement scores; no API key required)
 - nflverse games.csv (free spread cross-check, no API key required)
-- ESPN public scoreboard API (live scores, stdlib-only, no API key)
 - Magic-link auth per player (no login required for viewers)
 
 ## Historical Data
@@ -28,7 +27,7 @@ Fully automated NFL picks pool web app (40-50 players, $50 buy-in, 25k starting 
 - Picks effective balance: `effective_available = available - locked_amount` where `locked_amount` = sum of already-locked Thursday picks; new unlocked picks are validated against this reduced budget, not the full weekly balance
 - ESPN week mapping: pool weeks 1-18 = seasontype 2, week 19→wk1, 20→wk2, 21→wk3, 22→wk5 (Super Bowl)
 - PostgREST embedded filters (`.eq("games.season", x)`) use LEFT JOIN — never filter parent rows. Always use game-ID prefetch + `.in_("game_id", ids)` pattern instead.
-- `_load_via_nfl_data_py` in `settle_week.py` is intentionally dead code (`NotImplementedError`) — team abbreviations vs. display names are incompatible; ESPN scoreboard is the only score source
+- ESPN scoreboard display names are the canonical team names in DB-facing code.
 - `get_client()` in `db.py` uses `@lru_cache(maxsize=1)` — safe for Vercel serverless (one instance per cold start)
 
 ## Running Locally

@@ -18,6 +18,7 @@ def main(week: int, season: int, dry_run: bool = False):
     print(f"[send_reminders] season={season} week={week} dry_run={dry_run}")
 
     players = db.get_all_players()
+    client = db.get_client()
 
     # Get picks for this week: query game IDs first, then filter picks by game_id.
     # (Filtering on embedded relationship columns in PostgREST only filters the
@@ -32,9 +33,8 @@ def main(week: int, season: int, dry_run: bool = False):
         print(f"  Week {week} games are all final/voided — skipping reminders")
         return
 
-    from api.lib.db import get_client
     picks_this_week = (
-        get_client()
+        client
         .table("picks")
         .select("player_id")
         .in_("game_id", list(games_this_week))
@@ -45,7 +45,7 @@ def main(week: int, season: int, dry_run: bool = False):
 
     # Load week balances so we can skip eliminated players (0 pts can't bet anyway)
     week_log_rows = (
-        get_client()
+        client
         .table("week_log")
         .select("player_id, start_points")
         .eq("season", season)

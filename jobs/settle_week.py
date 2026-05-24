@@ -2,9 +2,7 @@
 Tuesday 09:00 ET — pull authoritative final scores, settle all picks,
 apply escalating no-bet penalties, advance week_log.
 
-Score source priority:
-  1. nfl-data-py (authoritative; requires pip install nfl-data-py)
-  2. ESPN public scoreboard API (stdlib-only fallback; used when nfl-data-py unavailable)
+Score source: ESPN public scoreboard API (stdlib-only, no API key).
 
 Ported from Historical_Code/tuesday.R (lines 35–184).
 Idempotent: safe to re-run; will skip already-settled picks.
@@ -24,13 +22,6 @@ load_dotenv()
 from api.lib import db
 from api.lib.settlement import GameResult, ats_winner, settle_pick, compute_player_week_end_points
 from api.lib.spreads import POOL_WEEK_MAP as _POOL_WEEK_MAP
-
-
-def _load_via_nfl_data_py(season: int, week: int) -> dict[tuple, dict]:
-    # nfl-data-py uses team abbreviations ("KC") but the DB stores full display
-    # names ("Kansas City Chiefs"). Without a mapping table these can't be matched,
-    # so we raise to force the ESPN fallback which uses the same displayName format.
-    raise NotImplementedError("nfl-data-py team names (abbreviations) incompatible with DB (full display names)")
 
 
 def _load_via_espn(season: int, week: int) -> dict[tuple, dict]:
@@ -63,19 +54,7 @@ def _load_via_espn(season: int, week: int) -> dict[tuple, dict]:
 
 
 def load_final_scores(season: int, week: int) -> dict[tuple, dict]:
-    """Load final scores keyed by (home_team, away_team) display name pair.
-
-    Tries nfl-data-py first (raises NotImplementedError due to name format
-    mismatch), falls back to ESPN scoreboard API which uses the same full
-    display names stored in the DB.
-    """
-    try:
-        scores = _load_via_nfl_data_py(season, week)
-        print(f"  Loaded {len(scores)} final scores from nfl-data-py")
-        return scores
-    except Exception as exc:
-        print(f"  nfl-data-py unavailable ({exc}); falling back to ESPN API")
-
+    """Load final scores keyed by (home_team, away_team) display name pair."""
     scores = _load_via_espn(season, week)
     print(f"  Loaded {len(scores)} final scores from ESPN API")
     return scores
@@ -83,6 +62,7 @@ def load_final_scores(season: int, week: int) -> dict[tuple, dict]:
 
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[settle_week] season={season} week={week} dry_run={dry_run}")
+    client = db.get_client()
 
     games = db.get_games(season, week)
     if not games:
@@ -92,7 +72,14 @@ def main(week: int, season: int, dry_run: bool = False):
     if all(g["status"] in ("final", "voided") for g in games):
         # Check if week_log is already fully written
         players = db.get_all_players()
-        week_log_rows = db.get_client().table("week_log").select("player_id, end_points").eq("season", season).eq("week", week).execute().data
+        week_log_rows = (
+            client.table("week_log")
+            .select("player_id, end_points")
+            .eq("season", season)
+            .eq("week", week)
+            .execute()
+            .data
+        )
         settled_ids = {r["player_id"] for r in week_log_rows if r["end_points"] is not None}
         if all(p["id"] in settled_ids for p in players if p["is_active"]):
             print(f"  Week {week} fully settled — nothing to do.")
@@ -105,7 +92,14 @@ def main(week: int, season: int, dry_run: bool = False):
     # ── Settle each game ────────────────────────────────────────────────────
     for game in games:
         key = (game["home_team"], game["away_team"])
-        score = final_scores.get(key)
+        score = (
+            {
+                "home_score": game.get("home_score") or 0,
+                "away_score": game.get("away_score") or 0,
+            }
+            if game["status"] == "voided"
+            else final_scores.get(key)
+        )
         if not score:
             print(f"  ⚠ No final score found for {game['home_team']} vs {game['away_team']}")
             continue
@@ -122,16 +116,15 @@ def main(week: int, season: int, dry_run: bool = False):
         winner = ats_winner(gr)
         print(f"  {gr.favorite_team} -{gr.spread} vs {gr.underdog_team} → ATS winner: {winner}")
 
-        if not dry_run:
+        if not dry_run and game["status"] != "voided":
             db.update_game(game["id"],
                            home_score=score["home_score"],
                            away_score=score["away_score"],
                            status="final")
 
         # Settle each pick for this game
-        from api.lib.db import get_client
         picks = (
-            get_client()
+            client
             .table("picks")
             .select("*")
             .eq("game_id", game["id"])
@@ -141,7 +134,7 @@ def main(week: int, season: int, dry_run: bool = False):
         for pick in picks:
             # Skip if already settled
             existing = (
-                get_client()
+                client
                 .table("settlements")
                 .select("id")
                 .eq("pick_id", pick["id"])
@@ -166,9 +159,8 @@ def main(week: int, season: int, dry_run: bool = False):
 
         # Gather settled picks for this week via picks_reveal_v (direct columns,
         # no nested-resource filters which don't reliably filter parent rows).
-        from api.lib.db import get_client
         settlements_raw = (
-            get_client()
+            client
             .table("picks_reveal_v")
             .select("result, net_profit")
             .eq("player_id", player["id"])

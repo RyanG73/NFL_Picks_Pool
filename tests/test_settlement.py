@@ -1,5 +1,4 @@
 """Unit tests for api/lib/settlement.py pure-logic functions."""
-import pytest
 from api.lib.settlement import ats_winner, settle_pick, compute_penalty_amount, compute_player_week_end_points, GameResult
 
 

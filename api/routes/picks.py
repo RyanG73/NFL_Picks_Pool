@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from api.lib import db
 from api.lib.auth import validate_magic_token
@@ -22,9 +22,8 @@ def _current_week() -> int:
 
 def _available_points(player_id: str, week: int) -> int:
     """Player's starting points for the current week from week_log."""
-    from api.lib.db import get_client
     res = (
-        get_client()
+        db.get_client()
         .table("week_log")
         .select("start_points")
         .eq("player_id", player_id)

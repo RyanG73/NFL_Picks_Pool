@@ -17,7 +17,7 @@ on conflict (id) do nothing;
 
 
 -- ── Sample week 1 games (2026) ─────────────────────────────────────────────
--- Spreads are made-up; replace with real lines from The Odds API before week 1.
+-- Spreads are made-up; replace with real ESPN lines before week 1.
 
 insert into games (id, season, week, espn_event_id, home_team, away_team, favorite_team, underdog_team, spread, kickoff_at, status) values
   ('00000000-0002-0000-0000-000000000001', 2026, 1, 'espn-001',

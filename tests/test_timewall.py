@@ -1,5 +1,4 @@
 """Unit tests for api/lib/timewall.py pure-logic functions."""
-import pytest
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 

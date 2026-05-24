@@ -28,8 +28,8 @@ def fetch_postponed_games(season: int, week: int) -> set[tuple[str, str]]:
     """
     Return (home_team_name, away_team_name) pairs for postponed/cancelled games.
 
-    Matches by team name (not espn_event_id) — games inserted before the 2026
-    season may carry Odds API IDs in that column; team names are always reliable.
+    Matches by team name rather than espn_event_id, keeping this independent of
+    any future ID-source change. Team names are stable for NFL games.
 
     Passes explicit season/week params to ESPN so manual --week runs check the
     correct slate rather than whatever ESPN's "current week" happens to be.

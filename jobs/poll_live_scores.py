@@ -35,10 +35,8 @@ def fetch_espn_scores() -> dict[tuple[str, str], dict]:
     """
     Return dict keyed by (home_team_display_name, away_team_display_name).
 
-    Does NOT key by espn_event_id — games inserted before the 2026 season may
-    carry Odds API IDs in that column. Team names are stable across all sources.
-    The ESPN event ID is stored in the value dict so we can write it back to the
-    DB on first match.
+    Does NOT key by espn_event_id. Team names are stable across ESPN schedule,
+    spread, and score responses, and avoid depending on an ID translation layer.
     """
     resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
     resp.raise_for_status()

@@ -1,6 +1,7 @@
 import os
 import pathlib
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -16,6 +17,7 @@ templates.env.filters["kickoff_day"] = kickoff_day_et
 templates.env.filters["spread_fmt"] = spread_fmt
 
 SEASON = int(os.environ.get("CURRENT_SEASON", 2026))
+_ET = ZoneInfo("America/New_York")
 
 
 def _current_week() -> int:
@@ -124,10 +126,6 @@ def _compute_prizes(standings: list[dict]) -> list[str]:
     return compute_prize_ladder(max(paid_count, 1))
 
 
-def _apply_prizes(standings: list[dict], prizes: list[str]) -> list[dict]:
-    return apply_prize_ladder(standings, prizes)
-
-
 # ── Leaderboard (home) ─────────────────────────────────────────────────────
 
 @router.get("/", response_class=HTMLResponse)
@@ -145,7 +143,7 @@ async def home(request: Request, week: int | None = None):
     games = db.get_games(SEASON, viewing_week)
     banner = db.get_active_banner()
     prizes = _compute_prizes(standings)
-    standings = _apply_prizes(standings, prizes)
+    standings = apply_prize_ladder(standings, prizes)
     return templates.TemplateResponse("leaderboard.html", {
         "request": request,
         "standings": standings,
@@ -166,8 +164,8 @@ async def leaderboard_fragment(request: Request):
     week = _current_week()
     standings, is_live = _compute_live_standings(SEASON, week)
     prizes = _compute_prizes(standings)
-    standings = _apply_prizes(standings, prizes)
-    now_et = datetime.now(timezone.utc).astimezone(__import__("zoneinfo").ZoneInfo("America/New_York"))
+    standings = apply_prize_ladder(standings, prizes)
+    now_et = datetime.now(timezone.utc).astimezone(_ET)
     hour = now_et.hour % 12 or 12
     ampm = "AM" if now_et.hour < 12 else "PM"
     updated_at = f"{hour}:{now_et.minute:02d} {ampm} ET"
@@ -258,7 +256,7 @@ async def player_profile(request: Request, player_id: str):
     # Standings for rank display
     standings = db.get_standings(SEASON, current_week)
     prizes = _compute_prizes(standings)
-    standings = _apply_prizes(standings, prizes)
+    standings = apply_prize_ladder(standings, prizes)
     my_standing = next((s for s in standings if s["player_id"] == player_id), None)
 
     return templates.TemplateResponse("player_profile.html", {

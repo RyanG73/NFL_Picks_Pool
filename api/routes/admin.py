@@ -1,5 +1,4 @@
 import os
-import secrets
 from datetime import datetime, timezone
 from urllib.parse import quote_plus
 from fastapi import APIRouter, Request, Form, Depends
@@ -154,9 +153,9 @@ async def adjust_points(
     _=Depends(require_admin),
 ):
     """Manually adjust a player's end-of-week points (for corrections or waived penalties)."""
-    from api.lib.db import get_client
+    client = db.get_client()
     rows = (
-        get_client()
+        client
         .table("week_log")
         .select("*")
         .eq("player_id", player_id)
@@ -171,7 +170,7 @@ async def adjust_points(
     row = rows[0]
     base = row["end_points"] if row["end_points"] is not None else row["start_points"]
     new_end = base + adjustment
-    get_client().table("week_log").update({"end_points": new_end}).eq("id", row["id"]).execute()
+    client.table("week_log").update({"end_points": new_end}).eq("id", row["id"]).execute()
     db.log_action("adjust_points", {
         "player_id": player_id, "week": week,
         "adjustment": adjustment, "reason": reason,
@@ -317,8 +316,8 @@ async def send_broadcast_msg(
 ):
     players = db.get_all_players()
     send_broadcast(players, subject, body_html)
-    from api.lib.db import get_client
-    get_client().table("broadcasts").insert({
+    client = db.get_client()
+    client.table("broadcasts").insert({
         "subject": subject,
         "body_html": body_html,
         "banner_text": banner_text or None,

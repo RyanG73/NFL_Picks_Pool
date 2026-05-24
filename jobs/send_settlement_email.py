@@ -48,9 +48,8 @@ def main(week: int, season: int, dry_run: bool = False):
     standings = apply_prize_ladder(standings, prizes)
 
     # Penalties applied this week (for no-pick notice)
-    from api.lib.db import get_client
     penalty_rows = (
-        get_client()
+        db.get_client()
         .table("penalties")
         .select("player_id, amount, consecutive_misses, waived")
         .eq("season", season)

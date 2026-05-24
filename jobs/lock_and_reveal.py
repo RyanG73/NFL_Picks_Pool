@@ -23,8 +23,8 @@ def main(week: int, season: int, dry_run: bool = False):
     print(f"[lock_and_reveal] season={season} week={week} dry_run={dry_run}")
 
     players = db.get_all_players()
+    client = db.get_client()
 
-    from api.lib.db import get_client
     games_list = db.get_games(season, week)
     games_this_week = {g["id"] for g in games_list}
     if not games_this_week:
@@ -36,7 +36,7 @@ def main(week: int, season: int, dry_run: bool = False):
         return
 
     all_picks = (
-        get_client()
+        client
         .table("picks")
         .select("player_id, game_id")
         .in_("game_id", list(games_this_week))
@@ -47,7 +47,7 @@ def main(week: int, season: int, dry_run: bool = False):
 
     # Load week_log to check starting balances (eliminated players skip penalty)
     week_log_rows = (
-        get_client()
+        client
         .table("week_log")
         .select("player_id, start_points")
         .eq("season", season)
