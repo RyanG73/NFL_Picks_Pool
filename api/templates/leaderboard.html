@@ -23,7 +23,7 @@
       </div>
       {% if g.status in ['in_progress', 'final'] %}
       <div class="mt-1 text-center text-gray-500">
-        {{ g.home_score }} – {{ g.away_score }}
+        {{ g.home_score | default(0) }} – {{ g.away_score | default(0) }}
         {% if g.status == 'final' %}<span class="text-red-600 font-bold ml-1">F</span>{% endif %}
       </div>
       {% endif %}
