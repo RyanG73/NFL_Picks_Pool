@@ -19,8 +19,10 @@
         <span class="font-medium
           {% if g.status == 'final' %}text-gray-700
           {% elif g.status == 'in_progress' %}text-green-600 animate-pulse
-          {% endif %}">
-          {{ g.status | upper }}
+          {% elif g.status == 'voided' %}text-red-600
+          {% elif g.status == 'postponed' %}text-orange-500
+          {% else %}text-gray-400{% endif %}">
+          {{ g.status | upper | replace('_', ' ') }}
           {% if g.status in ['in_progress','final'] %} · {{ g.home_score }}–{{ g.away_score }}{% endif %}
         </span>
       </div>
