@@ -1,3 +1,4 @@
+import html as _html
 import os
 import resend
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -19,24 +20,32 @@ def _render(template_name: str, **ctx) -> str:
 def send_weekly_spreads(players: list[dict], week: int, season: int, games: list[dict], standings: list[dict], prizes: list[str] | None = None) -> None:
     """Wednesday email: spreads live + last week results."""
     app_url = os.environ.get("APP_URL", "")
+    errors: list[tuple[str, str]] = []
     for player in players:
-        html = _render(
-            "email/weekly_spreads.html",
-            player=player,
-            week=week,
-            season=season,
-            games=games,
-            standings=standings,
-            prizes=prizes or [],
-            picks_url=f"{app_url}/p/{player['magic_token']}",
-            app_url=app_url,
-        )
-        resend.Emails.send({
-            "from": FROM,
-            "to": player["email"],
-            "subject": f"🏈 Week {week} Spreads Are Live — {season} NFL Picks Pool",
-            "html": html,
-        })
+        try:
+            body = _render(
+                "email/weekly_spreads.html",
+                player=player,
+                week=week,
+                season=season,
+                games=games,
+                standings=standings,
+                prizes=prizes or [],
+                picks_url=f"{app_url}/p/{player['magic_token']}",
+                app_url=app_url,
+            )
+            resend.Emails.send({
+                "from": FROM,
+                "to": player["email"],
+                "subject": f"🏈 Week {week} Spreads Are Live — {season} NFL Picks Pool",
+                "html": body,
+            })
+        except Exception as exc:
+            errors.append((player["email"], str(exc)))
+    if errors:
+        print(f"[email_send] send_weekly_spreads: {len(errors)} error(s):")
+        for addr, err in errors:
+            print(f"  {addr}: {err}")
 
 
 def send_reminder(player: dict, week: int, season: int = 0) -> None:
@@ -65,7 +74,7 @@ def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
     if not players:
         return
     app_url = os.environ.get("APP_URL", "")
-    html = _render(
+    body = _render(
         "email/picks_reveal.html",
         week=week,
         season=season,
@@ -73,13 +82,15 @@ def send_picks_reveal(players: list[dict], week: int, season: int) -> None:
         app_url=app_url,
     )
     to_addrs = [p["email"] for p in players]
-    resend.Emails.send({
+    payload: dict = {
         "from": FROM,
         "to": to_addrs[0],
-        "bcc": to_addrs[1:],
         "subject": f"👀 Week {week} Picks Are Live — {season} NFL Picks Pool",
-        "html": html,
-    })
+        "html": body,
+    }
+    if len(to_addrs) > 1:
+        payload["bcc"] = to_addrs[1:]
+    resend.Emails.send(payload)
 
 
 def send_magic_link(player: dict, season: int = 0) -> None:
@@ -104,8 +115,8 @@ def send_magic_link(player: dict, season: int = 0) -> None:
 
 def send_admin_alert(to: str, subject: str, body: str) -> None:
     """Send a plain-text alert to the admin (Ryan)."""
-    html = f"<pre style='font-family:monospace'>{body}</pre>"
-    resend.Emails.send({"from": FROM, "to": to, "subject": subject, "html": html})
+    body_html = f"<pre style='font-family:monospace'>{_html.escape(body)}</pre>"
+    resend.Emails.send({"from": FROM, "to": to, "subject": subject, "html": body_html})
 
 
 def send_broadcast(players: list[dict], subject: str, body_html: str) -> None:
@@ -113,10 +124,12 @@ def send_broadcast(players: list[dict], subject: str, body_html: str) -> None:
     if not players:
         return
     to_addrs = [p["email"] for p in players]
-    resend.Emails.send({
+    payload: dict = {
         "from": FROM,
         "to": to_addrs[0],
-        "bcc": to_addrs[1:],
         "subject": subject,
         "html": body_html,
-    })
+    }
+    if len(to_addrs) > 1:
+        payload["bcc"] = to_addrs[1:]
+    resend.Emails.send(payload)
