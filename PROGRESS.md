@@ -2333,3 +2333,11 @@ The 56-iteration autonomous audit is **complete**. Every file in the codebase ha
 
 - Adjust Points form verified in admin.py ✅ (route exists at line 94)
 - `make smoke WEEK=1 SEASON=2026` — should be run before Week 1 kickoff against staging Supabase
+
+### Round 3 improvements (same overnight loop session)
+
+- **b945fb3** — fix: leaderboard.html — None-guard `home_score`/`away_score` (shows "0 – 0" at kickoff before first score poll)
+- **156ce62** — fix: week_view.html — winner/loser callout only shows when `total_net_profit > 0` (winner) or `< 0` (loser); was showing misleading positive amounts in the "Biggest Loss" slot
+- **4b4a0c1** — fix: send_picks_reveal — footer "Your picks link" now points to `/week/N` (the reveal page) instead of the homepage
+- **d95c2f0** — fix: send_reminders — per-player error handling (one bad email address no longer halts the entire reminder loop)
+- **d663e19** — fix: lock_and_reveal — isolate reveal email failure from penalty writes (penalties succeed; email error is logged as warning, job exits cleanly)
