@@ -115,7 +115,8 @@ def _extract_game(event: dict, season: int, week: int) -> dict | None:
         "underdog_team": underdog,
         "spread": spread_magnitude,
         "kickoff_at": event.get("date"),
-        "status": "scheduled",
+        # Intentionally omit "status" — DB default "scheduled" applies for new rows;
+        # existing rows keep their current status if pull_spreads is re-run mid-week.
     }
 
 
