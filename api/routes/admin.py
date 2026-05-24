@@ -27,8 +27,9 @@ def _current_week() -> int:
 # ── Dashboard ──────────────────────────────────────────────────────────────
 
 @router.get("/", response_class=HTMLResponse)
-async def admin_home(request: Request, _=Depends(require_admin)):
-    week = _current_week()
+async def admin_home(request: Request, week: int | None = None, _=Depends(require_admin)):
+    if week is None:
+        week = _current_week()
     players = db.get_all_players(active_only=False)
     standings = db.get_standings(SEASON, week)
     games = db.get_games(SEASON, week)

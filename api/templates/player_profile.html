@@ -24,8 +24,13 @@
     <div class="text-xs text-gray-500 mt-1">Season P&L</div>
   </div>
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-    <div class="text-2xl font-bold text-gray-900">{{ final_weeks | length }}</div>
-    <div class="text-xs text-gray-500 mt-1">Weeks Played</div>
+    <div class="text-2xl font-bold text-gray-900">
+      {% if my_standing %}{{ my_standing.rank_display | default(final_weeks | length) }}{% else %}—{% endif %}
+    </div>
+    <div class="text-xs text-gray-500 mt-1">Current Rank</div>
+    {% if my_standing and my_standing.prize %}
+    <div class="text-xs text-green-700 font-bold mt-0.5">{{ my_standing.prize }}</div>
+    {% endif %}
   </div>
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
     <div class="text-2xl font-bold {% if player.paid_buyin %}text-green-600{% else %}text-red-600{% endif %}">

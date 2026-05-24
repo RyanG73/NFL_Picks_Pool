@@ -240,6 +240,12 @@ async def player_profile(request: Request, player_id: str):
             continue
         picks_by_week.setdefault(pick["week"], []).append(pick)
 
+    # Standings for rank display
+    standings = db.get_standings(SEASON, current_week)
+    prizes = _compute_prizes(standings)
+    standings = _apply_prizes(standings, prizes)
+    my_standing = next((s for s in standings if s["player_id"] == player_id), None)
+
     return templates.TemplateResponse("player_profile.html", {
         "request": request,
         "player": player,
@@ -249,6 +255,7 @@ async def player_profile(request: Request, player_id: str):
         "season": SEASON,
         "week": current_week,
         "banner": db.get_active_banner(),
+        "my_standing": my_standing,
     })
 
 

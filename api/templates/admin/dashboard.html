@@ -4,7 +4,16 @@
 {% block content %}
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-  <span class="text-sm text-gray-500">Week {{ week }} · {{ season }} Season</span>
+  <form method="get" action="/admin/" class="flex items-center gap-2">
+    <label class="text-xs text-gray-500 font-medium">Week</label>
+    <select name="week" onchange="this.form.submit()"
+            class="border border-gray-300 rounded-lg px-2 py-1 text-sm text-gray-700">
+      {% for w in range(1, 23) %}
+      <option value="{{ w }}" {% if w == week %}selected{% endif %}>{{ w }}</option>
+      {% endfor %}
+    </select>
+    <span class="text-xs text-gray-400">· {{ season }} Season</span>
+  </form>
 </div>
 
 {% if error %}
