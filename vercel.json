@@ -10,14 +10,5 @@
     { "src": "/static/(.*)", "dest": "/api/static/$1" },
     { "src": "/(.*)", "dest": "/api/main.py" }
   ],
-  "crons": [
-    {
-      "path": "/api/cron/lock-and-reveal",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/detect-cancellations",
-      "schedule": "0 * * * *"
-    }
-  ]
+  "crons": []
 }
