@@ -14,7 +14,8 @@ replay:
 smoke:
 	python jobs/smoke_test.py --season $(SEASON) --week $(WEEK) --skip-email --verbose
 
-test: replay
+test:
+	python -m pytest tests/ -v
 
 # ── Jobs (dry-run by default) ──────────────────────────────────────────────
 spreads:
@@ -37,6 +38,7 @@ help:
 	@echo "Usage:"
 	@echo "  make dev          Start FastAPI dev server"
 	@echo "  make install      pip install -r requirements.txt"
+	@echo "  make test         Run pytest unit tests (tests/)"
 	@echo "  make replay       Run 2025 replay test (validates settlement logic)"
 	@echo "  make spreads WEEK=1 SEASON=2026   Dry-run spread fetch"
 	@echo "  make settle  WEEK=1 SEASON=2026   Dry-run settlement"
