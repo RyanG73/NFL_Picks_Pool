@@ -3,12 +3,16 @@ import os
 import resend
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from api.lib.timewall import kickoff_time_et, kickoff_day_et
+
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
 _template_env = Environment(
     loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "..", "templates")),
     autoescape=select_autoescape(["html"]),
 )
+_template_env.filters["kickoff_et"] = kickoff_time_et
+_template_env.filters["kickoff_day"] = kickoff_day_et
 
 FROM = f"{os.environ.get('FROM_NAME', 'NFL Picks Pool')} <{os.environ.get('FROM_EMAIL', 'picks@example.com')}>"
 

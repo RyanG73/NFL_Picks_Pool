@@ -13,7 +13,7 @@
 <table class="data">
   <thead>
     <tr>
-      <th>Day</th>
+      <th>Kickoff (ET)</th>
       <th>Favorite</th>
       <th>Spread</th>
       <th>Underdog</th>
@@ -22,7 +22,7 @@
   <tbody>
     {% for g in games %}
     <tr>
-      <td style="color:#6b7280;white-space:nowrap;">{{ g.kickoff_at[:10] }}</td>
+      <td style="color:#6b7280;white-space:nowrap;">{{ g.kickoff_at | kickoff_day }}<br><span style="font-size:11px;">{{ g.kickoff_at | kickoff_et }}</span></td>
       <td><strong>{{ g.favorite_team }}</strong></td>
       <td style="text-align:center;font-family:monospace;font-weight:700;">-{{ g.spread }}</td>
       <td>{{ g.underdog_team }}</td>

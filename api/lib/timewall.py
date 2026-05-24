@@ -137,3 +137,12 @@ def kickoff_time_et(utc_iso: str) -> str:
         return f"{hour}:{et.minute:02d} {ampm} ET"
     except Exception:
         return utc_iso[11:16]
+
+
+def kickoff_day_et(utc_iso: str) -> str:
+    """Jinja2 filter: convert UTC ISO timestamp to 'Thu Sep 10' for display."""
+    try:
+        et = _parse_utc(utc_iso).astimezone(_ET)
+        return et.strftime("%a %b %-d")
+    except Exception:
+        return utc_iso[:10]
