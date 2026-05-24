@@ -15,7 +15,7 @@
     {% set dog_pct = 100 - fav_pct %}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
       <div class="flex justify-between items-center mb-2 text-xs text-gray-500">
-        <span>{{ g.kickoff_at[:10] }}</span>
+        <span>{{ g.kickoff_at | kickoff_day }} · {{ g.kickoff_at | kickoff_et }}</span>
         <span class="font-medium
           {% if g.status == 'final' %}text-gray-700
           {% elif g.status == 'in_progress' %}text-green-600 animate-pulse
