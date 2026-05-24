@@ -7,6 +7,27 @@
   <span class="text-sm text-gray-500">Week {{ week }} · {{ season }} Season</span>
 </div>
 
+{% if error %}
+<div class="bg-red-50 border border-red-300 rounded-xl p-4 mb-6 text-red-800 text-sm font-medium">
+  Error: {{ error | replace('_', ' ') | title }}
+</div>
+{% endif %}
+
+{% if banner %}
+<div class="bg-yellow-50 border border-yellow-300 rounded-xl p-4 mb-6 flex items-center justify-between gap-4">
+  <div>
+    <span class="text-xs font-semibold text-yellow-700 uppercase tracking-wide">Active Banner</span>
+    <p class="text-sm text-yellow-900 mt-0.5">{{ banner.banner_text }}</p>
+  </div>
+  <form method="post" action="/admin/banner/clear" class="shrink-0">
+    <button type="submit"
+            class="text-xs font-semibold text-yellow-700 border border-yellow-400 rounded-lg px-3 py-1.5 hover:bg-yellow-100">
+      Clear Banner
+    </button>
+  </form>
+</div>
+{% endif %}
+
 <!-- Quick stats -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">

@@ -242,3 +242,17 @@ def get_active_banner() -> dict | None:
         .execute()
     )
     return res.data[0] if res.data else None
+
+def clear_active_banner() -> None:
+    """Null out banner_text on the most recent broadcast that has one."""
+    client = get_client()
+    res = (
+        client.table("broadcasts")
+        .select("id")
+        .not_.is_("banner_text", "null")
+        .order("sent_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if res.data:
+        client.table("broadcasts").update({"banner_text": None}).eq("id", res.data[0]["id"]).execute()

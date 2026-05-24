@@ -49,6 +49,8 @@ async def admin_home(request: Request, _=Depends(require_admin)):
         "spread_warnings": spread_warnings,
         "week": week,
         "season": SEASON,
+        "banner": db.get_active_banner(),
+        "error": request.query_params.get("error"),
     })
 
 
@@ -242,6 +244,15 @@ async def payout_page(request: Request, _=Depends(require_admin)):
         "season": SEASON,
         "week": final_week,
     })
+
+
+# ── Banner ─────────────────────────────────────────────────────────────────
+
+@router.post("/banner/clear", response_class=RedirectResponse)
+async def clear_banner(_=Depends(require_admin)):
+    db.clear_active_banner()
+    db.log_action("clear_banner", {})
+    return RedirectResponse("/admin/", status_code=303)
 
 
 # ── Broadcast ──────────────────────────────────────────────────────────────
