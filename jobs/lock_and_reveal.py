@@ -93,8 +93,11 @@ def main(week: int, season: int, dry_run: bool = False):
 
     # Send picks reveal email
     if not dry_run:
-        email_send.send_picks_reveal(players, week, season)
-        print(f"  Picks reveal email sent to {len(players)} players")
+        try:
+            email_send.send_picks_reveal(players, week, season)
+            print(f"  Picks reveal email sent to {len(players)} players")
+        except Exception as exc:
+            print(f"  ⚠  send_picks_reveal failed (penalties were written): {exc}")
     else:
         print("  (dry-run: no penalties written, no emails sent)")
 
