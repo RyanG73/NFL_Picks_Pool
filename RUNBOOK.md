@@ -41,7 +41,7 @@ The Vercel crons are a belt-and-suspenders safety net. On Hobby, GitHub Actions 
    simulates final scores, settles, verifies outcomes, and cleans up.
    All rows are deleted on teardown — safe to run against your real Supabase.
 
-5. **Dry-run week 1 spreads** (after Odds API key is set):
+5. **Dry-run week 1 spreads** (no API key needed — uses ESPN public scoreboard):
    ```bash
    python jobs/pull_spreads.py --week 1 --season 2026 --dry-run
    ```
@@ -67,9 +67,9 @@ The Vercel crons are a belt-and-suspenders safety net. On Hobby, GitHub Actions 
 
 1. Check GitHub Actions → `cron-pull-spreads.yml` log for the error.
 2. Common causes:
-   - Odds API quota exceeded (500 req/mo free tier — one per week is fine)
-   - NFL schedule not yet posted (early in offseason)
-   - API key wrong/expired
+   - NFL schedule not yet posted (early in offseason — ESPN returns no events)
+   - ESPN scoreboard temporarily unavailable (retry in a few hours)
+   - Spreads not yet posted for the week (re-run Wednesday morning when lines open)
 3. **Manual fix**: run locally with the correct week number:
    ```bash
    python jobs/pull_spreads.py --week N --season 2026
