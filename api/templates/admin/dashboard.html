@@ -193,8 +193,9 @@
           {% if g.status == 'final' %}bg-gray-100 text-gray-600
           {% elif g.status == 'voided' %}bg-red-100 text-red-700
           {% elif g.status == 'in_progress' %}bg-green-100 text-green-700
+          {% elif g.status == 'postponed' %}bg-orange-100 text-orange-700
           {% else %}bg-blue-50 text-blue-600{% endif %}">
-          {{ g.status | upper }}
+          {{ g.status | upper | replace('_', ' ') }}
         </span>
       </div>
       <div class="flex gap-2">
