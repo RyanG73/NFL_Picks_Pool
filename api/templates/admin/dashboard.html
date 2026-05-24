@@ -108,11 +108,35 @@
             {{ "{:,}".format(standing.current_points) if standing else '—' }}
           </td>
           <td class="px-4 py-2 text-center">
-            <div class="flex justify-center gap-2">
+            <div class="flex justify-center gap-2 flex-wrap">
               <form method="post" action="/admin/player/{{ player.id }}/resend-link" class="inline">
                 <button type="submit" class="text-xs text-blue-600 hover:underline">Resend Link</button>
               </form>
               <a href="/admin/picks/{{ player.id }}/{{ week }}" class="text-xs text-purple-600 hover:underline">Edit Picks</a>
+              <details class="relative inline-block text-left">
+                <summary class="text-xs text-orange-500 hover:underline cursor-pointer" style="list-style:none;display:inline">Adjust ±</summary>
+                <form method="post" action="/admin/player/{{ player.id }}/adjust-points"
+                      class="absolute z-10 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3 flex flex-col gap-2 w-52">
+                  <div class="flex gap-1">
+                    <div class="flex-1">
+                      <label class="text-xs text-gray-400">Week</label>
+                      <input type="number" name="week" value="{{ week }}" min="1" max="22"
+                             class="w-full border border-gray-300 rounded px-1.5 py-1 text-xs">
+                    </div>
+                    <div class="flex-1">
+                      <label class="text-xs text-gray-400">Points (±)</label>
+                      <input type="number" name="adjustment" required placeholder="-5000"
+                             class="w-full border border-gray-300 rounded px-1.5 py-1 text-xs">
+                    </div>
+                  </div>
+                  <input type="text" name="reason" required placeholder="Reason for adjustment"
+                         class="border border-gray-300 rounded px-1.5 py-1 text-xs w-full">
+                  <button type="submit"
+                          class="bg-orange-500 text-white text-xs font-semibold rounded px-2 py-1 hover:opacity-90">
+                    Apply Adjustment
+                  </button>
+                </form>
+              </details>
             </div>
           </td>
         </tr>
