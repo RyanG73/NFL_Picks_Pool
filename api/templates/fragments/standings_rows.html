@@ -12,8 +12,9 @@
   <!-- Rank -->
   <td class="px-4 py-3 text-gray-400 font-mono text-sm">
     {% set rd = row.rank_display | default(loop.index | string) %}
-    {% if not row.is_eliminated and rd in ['1', '2', '3'] %}
-      {{ ['🥇','🥈','🥉'][(rd | int) - 1] }}
+    {% set rank_num = rd.lstrip('T') | int(default=0) %}
+    {% if not row.is_eliminated and 1 <= rank_num <= 3 %}
+      {{ ['🥇','🥈','🥉'][rank_num - 1] }}
     {% else %}
       {{ rd }}
     {% endif %}
@@ -38,10 +39,11 @@
   </td>
 
   <!-- Week profit/loss -->
+  {% set wp = row.week_profit | default(0) %}
   <td class="px-4 py-3 text-right tabular-nums hidden sm:table-cell
-      {% if row.week_profit > 0 %}text-green-600{% elif row.week_profit < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
-    {% if row.week_profit != 0 %}
-      {% if row.week_profit > 0 %}+{% endif %}{{ "{:,}".format(row.week_profit) }}
+      {% if wp > 0 %}text-green-600{% elif wp < 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+    {% if wp != 0 %}
+      {% if wp > 0 %}+{% endif %}{{ "{:,}".format(wp) }}
     {% else %}
       —
     {% endif %}
