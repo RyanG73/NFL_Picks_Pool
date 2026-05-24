@@ -99,7 +99,7 @@
       <tbody>
         {% for pp in players_picks %}
         <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-          <td class="px-4 py-3 font-medium">{{ pp.player_name }}</td>
+          <td class="px-4 py-3 font-medium"><a href="/player/{{ pp.picks[0].player_id if pp.picks else '' }}" class="hover:underline hover:text-blue-600">{{ pp.player_name }}</a></td>
           {% for slot in range(3) %}
           {% set pick = pp.picks[slot] if slot < pp.picks | length else none %}
           <td class="px-4 py-3 text-center
@@ -130,6 +130,8 @@
             {% if pp.total_net_profit > 0 %}+{% endif %}{{ "{:,}".format(pp.total_net_profit) if pp.total_net_profit is not none else '—' }}
           </td>
         </tr>
+        {% else %}
+        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm">No picks submitted this week.</td></tr>
         {% endfor %}
       </tbody>
     </table>
