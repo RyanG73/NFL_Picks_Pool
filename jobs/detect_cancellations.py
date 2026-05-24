@@ -18,19 +18,29 @@ load_dotenv()
 
 import httpx
 from api.lib import db, email_send
+from api.lib.spreads import POOL_WEEK_MAP
 
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", os.environ.get("FROM_EMAIL", ""))
 
 
-def fetch_postponed_games() -> set[tuple[str, str]]:
+def fetch_postponed_games(season: int, week: int) -> set[tuple[str, str]]:
     """
     Return (home_team_name, away_team_name) pairs for postponed/cancelled games.
 
     Matches by team name (not espn_event_id) — games inserted before the 2026
     season may carry Odds API IDs in that column; team names are always reliable.
+
+    Passes explicit season/week params to ESPN so manual --week runs check the
+    correct slate rather than whatever ESPN's "current week" happens to be.
     """
-    resp = httpx.get(ESPN_SCOREBOARD, timeout=10)
+    if week not in POOL_WEEK_MAP:
+        print(f"  Week {week} not in POOL_WEEK_MAP — querying ESPN without week filter")
+        url = ESPN_SCOREBOARD
+    else:
+        seasontype, espn_week = POOL_WEEK_MAP[week]
+        url = f"{ESPN_SCOREBOARD}?season={season}&seasontype={seasontype}&week={espn_week}"
+    resp = httpx.get(url, timeout=10)
     resp.raise_for_status()
     events = resp.json().get("events", [])
     flagged: set[tuple[str, str]] = set()
@@ -54,7 +64,7 @@ def fetch_postponed_games() -> set[tuple[str, str]]:
 def main(week: int, season: int, dry_run: bool = False):
     print(f"[detect_cancellations] season={season} week={week}")
 
-    postponed_games = fetch_postponed_games()
+    postponed_games = fetch_postponed_games(season, week)
     if not postponed_games:
         print("  No postponed/cancelled games detected")
         return
