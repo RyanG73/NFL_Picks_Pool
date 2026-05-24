@@ -13,7 +13,17 @@
     {% endif %}
   </div>
 </div>
-<p class="text-sm text-gray-500 mb-6">{{ season }} Season · Picks reveal Saturday at noon ET</p>
+{% set live_count   = games | selectattr('status', 'equalto', 'in_progress') | list | length %}
+{% set final_count  = games | selectattr('status', 'equalto', 'final')       | list | length %}
+{% set voided_count = games | selectattr('status', 'equalto', 'voided')      | list | length %}
+{% set done_count   = final_count + voided_count %}
+<p class="text-sm text-gray-500 mb-6">{{ season }} Season ·
+  {% if picks_revealed %}
+    {% if live_count > 0 %}Results live · updates every 60 sec
+    {% elif done_count == games | length and games | length > 0 %}Week {{ week }} settled
+    {% else %}Picks revealed{% endif %}
+  {% else %}Picks reveal Saturday at noon ET{% endif %}
+</p>
 
 <!-- Picks-by-team heatmap (mirrors saturday.R picks_by_team chart) -->
 <section class="mb-8">
