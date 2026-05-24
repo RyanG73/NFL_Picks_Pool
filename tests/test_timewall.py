@@ -30,6 +30,16 @@ def test_kickoff_time_et_midnight_hour():
     assert kickoff_time_et("2026-09-10T00:00:00Z") == "8:00 PM ET"
 
 
+def test_kickoff_time_et_noon():
+    # 2026-09-10T16:00:00Z = 12:00 PM EDT (UTC-4 in September)
+    assert kickoff_time_et("2026-09-10T16:00:00Z") == "12:00 PM ET"
+
+
+def test_kickoff_time_et_midnight():
+    # 2026-09-10T04:00:00Z = 12:00 AM EDT
+    assert kickoff_time_et("2026-09-10T04:00:00Z") == "12:00 AM ET"
+
+
 def test_kickoff_time_et_invalid_fallback():
     result = kickoff_time_et("not-a-date")
     assert isinstance(result, str)
@@ -83,6 +93,14 @@ def test_saturday_noon_no_sunday_games():
 
 def test_saturday_noon_empty_games():
     sat_noon = saturday_noon_et([])
+    assert sat_noon == datetime.max.replace(tzinfo=timezone.utc)
+
+
+def test_saturday_noon_monday_only_no_lock():
+    # MNF-only week with no Sunday games → no Saturday-noon lock.
+    # Mon 2026-09-14 at 8:15pm EDT = 2026-09-15T00:15:00Z (UTC)
+    mon_game = _game("2026-09-15T00:15:00Z")
+    sat_noon = saturday_noon_et([mon_game])
     assert sat_noon == datetime.max.replace(tzinfo=timezone.utc)
 
 
@@ -212,6 +230,22 @@ def test_apply_prize_ladder_eliminated_no_prize():
 
     assert result[0]["prize"] == "$100"
     assert result[1]["prize"] is None
+
+
+def test_apply_prize_ladder_more_players_than_prizes():
+    # Only top N get prizes; the rest get None
+    standings = [
+        _standing("a", "Alice", 30000),
+        _standing("b", "Bob",   25000),
+        _standing("c", "Carol", 20000),
+        _standing("d", "Dave",  15000),
+    ]
+    prizes = ["$300", "$150"]  # only 2 prizes for 4 players
+    result = apply_prize_ladder(standings, prizes)
+    assert result[0]["prize"] == "$300"
+    assert result[1]["prize"] == "$150"
+    assert result[2]["prize"] is None
+    assert result[3]["prize"] is None
 
 
 def test_apply_prize_ladder_empty():
